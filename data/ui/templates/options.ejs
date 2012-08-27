@@ -1,0 +1,25 @@
+<div class="dialog-header">
+  <a class="closeicon" href="#">&#x2715;</a>
+  <h1 class="dialog-title">[%= str.options %]</h1>
+</div>
+<div class="innersection">
+  <table class="form">
+  <tbody>
+    <tr>
+      <td>[%= str.options_lang_str %]</td>
+      <td><select id="options-lang-sel">
+          <option id="options-lang-en" value="en" selected="selected" class="str">[%= str.options_lang_en %]</option>
+          <option id="options-lang-es" value="es" class="str">[%= str.options_lang_es %]</option>
+      </select></td>
+    </tr>
+    <tr>
+      <td>[%= str.keyserver %] hkp://</td>
+      <td><input id="options-keyserver" type="text"></input></td>
+    </tr>
+    <tr>
+      <td>[%= str.options_default_key %]</td>
+      <td><select id="options-default-key"></select></td>
+    </tr>
+  </tbody>
+  </table>
+</div>

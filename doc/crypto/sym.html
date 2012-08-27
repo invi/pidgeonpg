@@ -1,0 +1,175 @@
+<!DOCTYPE html><html lang="en"><head><title>crypto/sym</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="crypto/sym"><meta name="groc-project-path" content="lib/crypto/sym.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/crypto/sym.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="kd">var</span> <span class="p">{</span><span class="nx">Cu</span><span class="p">,</span> <span class="nx">Ci</span><span class="p">,</span> <span class="nx">Cc</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;chrome&quot;</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>var prng = Cc['@mozilla.org/security/random-generator;1'];  </p></div></div><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="p">{</span><span class="nx">keyExpansion</span><span class="p">,</span> <span class="nx">AESencrypt</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;crypto/symmetric/aes&quot;</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>const {openpgp<em>symenc</em>cast5, cast5_encrypt} = require("crypto/symmetric/cast5");</p></div></div><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="p">{</span><span class="nx">openpgp_cfb_decrypt</span><span class="p">,</span>
+       <span class="nx">openpgp_cfb_encrypt</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;crypto/symmetric/openpgp.cfb&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;util/logger&quot;</span><span class="p">).</span><span class="nx">create</span><span class="p">(</span><span class="s1">&#39;sym.js&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">misc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/misc&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">domcrypt</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto/asymmetric/domcrypt&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">base64Decode</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;api-utils/base64&quot;</span><span class="p">).</span><span class="nx">decode</span><span class="p">;</span>
+<span class="cm">/*</span>
+<span class="cm"> * retrieve secure random byte string of the specified length</span>
+<span class="cm"> * @param length [Integer] length in bytes to generate</span>
+<span class="cm"> * @return [String] random byte string</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="nx">length</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">domcrypt</span><span class="p">.</span><span class="nx">generateRandom</span><span class="p">(</span><span class="nx">length</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span> 
+    <span class="nx">callback</span><span class="p">(</span><span class="nx">base64Decode</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span> 
+  <span class="p">});</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * generate random byte prefix as string for the specified algorithm</span>
+<span class="cm"> * @param algo [Integer] algorithm to use (see RFC4880 9.2)</span>
+<span class="cm"> * @return [String] random bytes with length equal to the block</span>
+<span class="cm"> * size of the cipher</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_getPrefixRandom</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span>
+  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span>
+  <span class="k">case</span> <span class="mi">4</span><span class="o">:</span>
+    <span class="k">return</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">7</span><span class="o">:</span>
+  <span class="k">case</span> <span class="mi">8</span><span class="o">:</span>
+  <span class="k">case</span> <span class="mi">9</span><span class="o">:</span>
+  <span class="k">case</span> <span class="mi">10</span><span class="o">:</span>
+    <span class="k">return</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+  <span class="k">default</span><span class="o">:</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * Generating a session key for the specified symmetric algorithm</span>
+<span class="cm"> * @param algo [Integer] algorithm to use (see RFC4880 9.2)</span>
+<span class="cm"> * @return [String] random bytes as a string to be used as a key</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_generateSessionKey</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="c1">// TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)</span>
+  <span class="k">case</span> <span class="mi">8</span><span class="o">:</span> <span class="c1">// AES with 192-bit key</span>
+    <span class="k">return</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span> 
+  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="c1">// CAST5 (128 bit key, as per [RFC2144])</span>
+  <span class="k">case</span> <span class="mi">4</span><span class="o">:</span> <span class="c1">// Blowfish (128 bit key, 16 rounds) [BLOWFISH]</span>
+  <span class="k">case</span> <span class="mi">7</span><span class="o">:</span> <span class="c1">// AES with 128-bit key [AES]</span>
+    <span class="k">return</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">9</span><span class="o">:</span> <span class="c1">// AES with 256-bit key</span>
+  <span class="k">case</span> <span class="mi">10</span><span class="o">:</span><span class="c1">// Twofish with 256-bit key [TWOFISH]</span>
+    <span class="k">return</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">throw</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Symmetric algorithm (&quot;</span> <span class="o">+</span> <span class="nx">algo</span> <span class="o">+</span> <span class="s2">&quot;) not supported&quot;</span><span class="p">);</span> 
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * retrieve the MDC prefixed bytes by decrypting them</span>
+<span class="cm"> * @param algo [Integer] algorithm to use (see RFC4880 9.2)</span>
+<span class="cm"> * @param key [String] key as string. length is depending on the algorithm used</span>
+<span class="cm"> * @param data [String] encrypted data where the prefix is decrypted from</span>
+<span class="cm"> * @return [String] plain text data of the prefixed data</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_MDCSystemBytes</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">util</span><span class="p">.</span><span class="nx">print_debug</span><span class="p">(</span><span class="s2">&quot;openpgp_crypto_symmetricDecrypt:\nencrypteddata:&quot;</span><span class="o">+</span><span class="nx">util</span><span class="p">.</span><span class="nx">hexstrdump</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="c1">// Plaintext or unencrypted data</span>
+    <span class="k">return</span> <span class="nx">data</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="c1">// TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_mdc</span><span class="p">(</span><span class="nx">desede</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="c1">// CAST5 (128 bit key, as per [RFC2144])</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_mdc</span><span class="p">(</span><span class="nx">cast5_encrypt</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">4</span><span class="o">:</span> <span class="c1">// Blowfish (128 bit key, 16 rounds) [BLOWFISH]</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_mdc</span><span class="p">(</span><span class="nx">BFencrypt</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">7</span><span class="o">:</span> <span class="c1">// AES with 128-bit key [AES]</span>
+  <span class="k">case</span> <span class="mi">8</span><span class="o">:</span> <span class="c1">// AES with 192-bit key</span>
+  <span class="k">case</span> <span class="mi">9</span><span class="o">:</span> <span class="c1">// AES with 256-bit key</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_mdc</span><span class="p">(</span><span class="nx">AESencrypt</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="nx">keyExpansion</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">10</span><span class="o">:</span> 
+    <span class="k">return</span> <span class="nx">openpgp_cfb_mdc</span><span class="p">(</span><span class="nx">TFencrypt</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="c1">// IDEA [IDEA]</span>
+    <span class="nx">util</span><span class="p">.</span><span class="nx">print_error</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">+</span> <span class="p">(</span><span class="nx">algo</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="s2">&quot;IDEA Algorithm not implemented&quot;</span> <span class="o">:</span> <span class="s2">&quot;Twofish Algorithm not implemented&quot;</span><span class="p">));</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="k">default</span><span class="o">:</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * Symmetrically decrypts data using a key with length depending on the</span>
+<span class="cm"> * algorithm in openpgp_cfb mode with or without resync (MDC style)</span>
+<span class="cm"> * @param algo [Integer] algorithm to use (see RFC4880 9.2)</span>
+<span class="cm"> * @param key [String] key as string. length is depending on the algorithm used</span>
+<span class="cm"> * @param data [String] data to be decrypted</span>
+<span class="cm"> * @param openpgp_cfb [boolean] if true use the resync (for encrypteddata); </span>
+<span class="cm"> * otherwise use without the resync (for MDC encrypted data)</span>
+<span class="cm"> * @return [String] plaintext data</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_symmetricDecrypt</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">logger</span><span class="p">.</span><span class="nx">debug</span><span class="p">(</span><span class="s2">&quot;openpgp_crypto_symmetricDecrypt:\nalgo:&quot;</span><span class="o">+</span><span class="nx">algo</span><span class="o">+</span><span class="s2">&quot;\nencrypteddata:&quot;</span><span class="o">+</span><span class="nx">misc</span><span class="p">.</span><span class="nx">hexstrdump</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+  <span class="kd">var</span> <span class="nx">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">openpgp_cfb</span><span class="p">)</span>
+    <span class="nx">n</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="c1">// Plaintext or unencrypted data</span>
+    <span class="k">return</span> <span class="nx">data</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="c1">// TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_decrypt</span><span class="p">(</span><span class="nx">desede</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">+</span><span class="nx">n</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="c1">// CAST5 (128 bit key, as per [RFC2144])</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_decrypt</span><span class="p">(</span><span class="nx">cast5_encrypt</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">+</span><span class="nx">n</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">4</span><span class="o">:</span> <span class="c1">// Blowfish (128 bit key, 16 rounds) [BLOWFISH]</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_decrypt</span><span class="p">(</span><span class="nx">BFencrypt</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">+</span><span class="nx">n</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">7</span><span class="o">:</span> <span class="c1">// AES with 128-bit key [AES]</span>
+  <span class="k">case</span> <span class="mi">8</span><span class="o">:</span> <span class="c1">// AES with 192-bit key</span>
+  <span class="k">case</span> <span class="mi">9</span><span class="o">:</span> <span class="c1">// AES with 256-bit key</span>
+    <span class="k">return</span> <span class="nx">openpgp_cfb_decrypt</span><span class="p">(</span><span class="nx">AESencrypt</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="nx">keyExpansion</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">+</span><span class="nx">n</span><span class="p">)</span><span class="o">-</span><span class="mi">18</span><span class="p">);</span>
+  <span class="k">case</span> <span class="mi">10</span><span class="o">:</span> <span class="c1">// Twofish with 256-bit key [TWOFISH]</span>
+    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">openpgp_cfb_decrypt</span><span class="p">(</span><span class="nx">TFencrypt</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="nx">n</span><span class="p">,</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="o">+</span><span class="nx">n</span><span class="p">)</span><span class="o">-</span><span class="mi">18</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="c1">// IDEA [IDEA]</span>
+    <span class="nx">util</span><span class="p">.</span><span class="nx">print_error</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">+</span> <span class="p">(</span><span class="nx">algo</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="s2">&quot;IDEA Algorithm not implemented&quot;</span> <span class="o">:</span> <span class="s2">&quot;Twofish Algorithm not implemented&quot;</span><span class="p">));</span>
+    <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="k">default</span><span class="o">:</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * Symmetrically encrypts data using prefixedrandom, a key with length </span>
+<span class="cm"> * depending on the algorithm in openpgp_cfb mode with or without resync</span>
+<span class="cm"> * (MDC style)</span>
+<span class="cm"> * @param prefixrandom secure random bytes as string in length equal to the</span>
+<span class="cm"> * block size of the algorithm used (use openpgp_crypto_getPrefixRandom(algo)</span>
+<span class="cm"> * to retrieve that string</span>
+<span class="cm"> * @param algo [Integer] algorithm to use (see RFC4880 9.2)</span>
+<span class="cm"> * @param key [String] key as string. length is depending on the algorithm used</span>
+<span class="cm"> * @param data [String] data to encrypt</span>
+<span class="cm"> * @param openpgp_cfb [boolean]</span>
+<span class="cm"> * @return [String] encrypted data</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_symmetricEncrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">algo</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="c1">// Plaintext or unencrypted data</span>
+      <span class="k">return</span> <span class="nx">data</span><span class="p">;</span> <span class="c1">// blockcipherencryptfn, plaintext, block_size, key</span>
+    <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="c1">// TripleDES (DES-EDE, [SCHNEIER] [HAC] - 168 bit key derived from 192)</span>
+      <span class="k">return</span> <span class="nx">openpgp_cfb_encrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">desede</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="nx">key</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="c1">// CAST5 (128 bit key, as per [RFC2144])</span>
+      <span class="k">return</span> <span class="nx">openpgp_cfb_encrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">cast5_encrypt</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="nx">key</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">4</span><span class="o">:</span> <span class="c1">// Blowfish (128 bit key, 16 rounds) [BLOWFISH]</span>
+      <span class="k">return</span> <span class="nx">openpgp_cfb_encrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">BFencrypt</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="nx">key</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">7</span><span class="o">:</span> <span class="c1">// AES with 128-bit key [AES]</span>
+    <span class="k">case</span> <span class="mi">8</span><span class="o">:</span> <span class="c1">// AES with 192-bit key</span>
+    <span class="k">case</span> <span class="mi">9</span><span class="o">:</span> <span class="c1">// AES with 256-bit key</span>
+      <span class="k">return</span> <span class="nx">openpgp_cfb_encrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">AESencrypt</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="nx">keyExpansion</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="mi">18</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">10</span><span class="o">:</span> <span class="c1">// Twofish with 256-bit key [TWOFISH]</span>
+      <span class="k">return</span> <span class="nx">openpgp_cfb_encrypt</span><span class="p">(</span><span class="nx">prefixrandom</span><span class="p">,</span> <span class="nx">TFencrypt</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">openpgp_cfb</span><span class="p">).</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="mi">18</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="c1">// IDEA [IDEA]</span>
+      <span class="nx">util</span><span class="p">.</span><span class="nx">print_error</span><span class="p">(</span><span class="s2">&quot;IDEA Algorithm not implemented&quot;</span><span class="p">);</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">getPrefixRandom</span> <span class="o">=</span> <span class="nx">openpgp_crypto_getPrefixRandom</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">generateSessionKey</span> <span class="o">=</span> <span class="nx">openpgp_crypto_generateSessionKey</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">generateRandom</span> <span class="o">=</span> <span class="nx">openpgp_crypto_getRandomBytes</span><span class="p">;</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">encrypt</span> <span class="o">=</span> <span class="nx">openpgp_crypto_symmetricEncrypt</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">decrypt</span> <span class="o">=</span> <span class="nx">openpgp_crypto_symmetricDecrypt</span><span class="p">;</span></div></div></div></div></body></html>

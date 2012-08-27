@@ -1,0 +1,313 @@
+<!DOCTYPE html><html lang="en"><head><title>encode/der</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="encode/der"><meta name="groc-project-path" content="lib/encode/der.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/encode/der.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="nx">PGP</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/openpgpdefs&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/logger&#39;</span><span class="p">).</span><span class="nx">create</span><span class="p">(</span><span class="s1">&#39;der.js&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">IOBuf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/iobuf&#39;</span><span class="p">).</span><span class="nx">IOBuf</span><span class="p">;</span>
+<span class="kr">const</span> <span class="nx">misc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/misc&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">rsa</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto/asymmetric/rsa/rsa&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">base64Decode</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;api-utils/base64&quot;</span><span class="p">).</span><span class="nx">decode</span><span class="p">;</span>
+<span class="kr">const</span> <span class="nx">base64Encode</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;api-utils/base64&quot;</span><span class="p">).</span><span class="nx">encode</span><span class="p">;</span>
+
+<span class="kr">const</span> <span class="nx">DER_INTEGER</span> <span class="o">=</span> <span class="mh">0x02</span><span class="p">,</span>
+      <span class="nx">DER_SEQUENCE</span> <span class="o">=</span> <span class="mh">0x30</span><span class="p">,</span>
+      <span class="nx">DER_BITSTRING</span> <span class="o">=</span> <span class="mh">0x03</span><span class="p">,</span>
+      <span class="nx">DER_OCTECTSTRING</span> <span class="o">=</span> <span class="mh">0x04</span><span class="p">,</span>
+      <span class="nx">DER_NULL</span> <span class="o">=</span> <span class="mh">0x05</span><span class="p">,</span>
+      <span class="nx">DER_OID</span> <span class="o">=</span> <span class="mh">0x00</span><span class="p">;</span>
+
+<span class="kr">const</span> <span class="nx">OID_RSA</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x06</span><span class="p">,</span> <span class="mh">0x09</span><span class="p">,</span> <span class="mh">0x2A</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="mh">0x48</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="mh">0xF7</span><span class="p">,</span> <span class="mh">0x0D</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">,</span> <span class="mh">0x05</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">],</span>
+      <span class="nx">OID_DSA</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x06</span><span class="p">,</span> <span class="mh">0x07</span><span class="p">,</span> <span class="mh">0x2A</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="mh">0x48</span><span class="p">,</span> <span class="mh">0xce</span><span class="p">,</span> <span class="mh">0x38</span><span class="p">,</span> <span class="mh">0x04</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">],</span>
+      <span class="nx">OID_DH</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x06</span><span class="p">,</span> <span class="mh">0x07</span><span class="p">,</span> <span class="mh">0x2A</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="mh">0x48</span><span class="p">,</span> <span class="mh">0xce</span><span class="p">,</span> <span class="mh">0x3e</span><span class="p">,</span> <span class="mh">0x02</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">];</span>
+
+<span class="kd">function</span> <span class="nx">DEREncode</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">outout</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">sequences</span> <span class="o">=</span> <span class="p">[];</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">wrap_len</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="p">[</span> <span class="p">];</span>
+  <span class="kd">var</span> <span class="nx">nbytes</span> <span class="o">=</span> <span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="nx">nbytes</span> <span class="o">&lt;</span> <span class="mh">0xff</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">nbytes</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">nbytes</span> <span class="o">&lt;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x81</span><span class="p">;</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">nbytes</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">nbytes</span> <span class="o">&lt;</span> <span class="mh">0xffff</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x82</span><span class="p">;</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">((</span><span class="nx">nbytes</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">nbytes</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="nx">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x83</span><span class="p">;</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">((</span><span class="nx">nbytes</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">((</span><span class="nx">nbytes</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+    <span class="nx">ret</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">nbytes</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">ret</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">arr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">bitstring</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_encode</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">DER_BITSTRING</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="k">return</span> <span class="nx">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">octectstring</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_encode</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">DER_OCTECTSTRING</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="k">return</span> <span class="nx">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">sequence</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">buf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_encode</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">DER_SEQUENCE</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="k">return</span> <span class="nx">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">concat</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">arr</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">arr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">_encode</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">val</span><span class="p">,</span> <span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">[</span><span class="nx">type</span><span class="p">].</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">wrap_len</span><span class="p">(</span><span class="nx">val</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">encode</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">val</span><span class="p">,</span> <span class="nx">type</span><span class="p">)</span> 
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nx">DER_OID</span><span class="o">:</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">val</span><span class="p">);</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">_encode</span><span class="p">(</span><span class="nx">val</span><span class="p">,</span> <span class="nx">type</span><span class="p">));</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">DEREncode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">toString</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="nx">base64Encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">atos</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">derbuf</span><span class="p">));</span>
+<span class="p">}</span>
+
+
+<span class="kd">function</span> <span class="nx">RSAPrivate</span><span class="p">(</span><span class="nx">pkey</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">byteLen</span> <span class="o">=</span> <span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span>
+  <span class="k">try</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">N</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span>  
+      <span class="nx">E</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> 
+      <span class="nx">D</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">2</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> 
+      <span class="nx">P</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">3</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> 
+      <span class="nx">Q</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">4</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> 
+      <span class="nx">C</span>  <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stohex</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">5</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
+  <span class="p">}</span> 
+
+  <span class="k">this</span><span class="p">.</span><span class="nx">NN</span> <span class="o">=</span> <span class="nx">N</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">EE</span> <span class="o">=</span> <span class="nx">E</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">DD</span> <span class="o">=</span> <span class="nx">D</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">PP</span> <span class="o">=</span> <span class="nx">P</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">QQ</span> <span class="o">=</span> <span class="nx">Q</span><span class="p">;</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">CC</span> <span class="o">=</span> <span class="nx">C</span><span class="p">;</span>
+
+  <span class="k">if</span><span class="p">(</span><span class="nx">N</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="nx">E</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="nx">N</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">E</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">n</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">parseBigInt</span><span class="p">(</span><span class="nx">N</span><span class="p">,</span><span class="mi">16</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">e</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">E</span><span class="p">,</span><span class="mi">16</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">d</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">parseBigInt</span><span class="p">(</span><span class="nx">D</span><span class="p">,</span><span class="mi">16</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">p</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">parseBigInt</span><span class="p">(</span><span class="nx">P</span><span class="p">,</span><span class="mi">16</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">q</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">parseBigInt</span><span class="p">(</span><span class="nx">Q</span><span class="p">,</span><span class="mi">16</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">dmp1</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">d</span><span class="p">.</span><span class="nx">mod</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">p</span><span class="p">.</span><span class="nx">subtract</span><span class="p">(</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">BigInteger</span><span class="p">.</span><span class="nx">ONE</span><span class="p">));</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">dmq1</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">d</span><span class="p">.</span><span class="nx">mod</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">q</span><span class="p">.</span><span class="nx">subtract</span><span class="p">(</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">BigInteger</span><span class="p">.</span><span class="nx">ONE</span><span class="p">));</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">coeff</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">q</span><span class="p">.</span><span class="nx">modInverse</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">p</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">n</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">e</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">1</span><span class="p">]).</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">d</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">2</span><span class="p">]).</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">p</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">3</span><span class="p">]).</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">q</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">4</span><span class="p">]).</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+    <span class="kd">var</span> <span class="nx">dmp1tmp</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">dmp1</span><span class="p">.</span><span class="nx">toByteArray</span><span class="p">();</span>
+    <span class="kd">var</span> <span class="nx">dmq1tmp</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">dmq1</span><span class="p">.</span><span class="nx">toByteArray</span><span class="p">();</span>
+    <span class="kd">var</span> <span class="nx">coefftmp</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">coeff</span><span class="p">.</span><span class="nx">toByteArray</span><span class="p">();</span>
+    <span class="kd">var</span> <span class="nx">dmp1</span> <span class="o">=</span> <span class="p">[];</span>
+    <span class="kd">var</span> <span class="nx">dmq1</span> <span class="o">=</span> <span class="p">[];</span>
+    <span class="kd">var</span> <span class="nx">coeff</span> <span class="o">=</span> <span class="p">[];</span>
+
+    <span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">dmp1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+      <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+    <span class="nx">dmp1tmp</span> <span class="o">=</span> <span class="nx">dmp1tmp</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">i</span> <span class="o">+</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+
+    <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">dmq1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+      <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+    <span class="nx">dmq1tmp</span> <span class="o">=</span> <span class="nx">dmq1tmp</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">i</span> <span class="o">+</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+
+    <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">coefftmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+      <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+    <span class="nx">coefftmp</span> <span class="o">=</span> <span class="nx">coefftmp</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">i</span> <span class="o">+</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="nx">dmp1tmp</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="nx">dmp1tmp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">concat</span><span class="p">(</span><span class="nx">dmp1tmp</span><span class="p">);</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">dmq1tmp</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="nx">dmq1tmp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">concat</span><span class="p">(</span><span class="nx">dmq1tmp</span><span class="p">);</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">coefftmp</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">byteLen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="nx">coefftmp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">concat</span><span class="p">(</span><span class="nx">coefftmp</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span><span class="nx">dmp1tmp</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">dmp1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="nx">dmp1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">+</span> <span class="nx">dmp1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+      <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">dmq1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="nx">dmq1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">+</span> <span class="nx">dmq1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+      <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">coefftmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="nx">coefftmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">+</span> <span class="nx">coefftmp</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+      <span class="p">}</span>
+
+      <span class="nx">dmp1</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span> <span class="nx">dmp1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+      <span class="nx">dmq1</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span> <span class="nx">dmq1tmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+      <span class="nx">coeff</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span> <span class="nx">coefftmp</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">DPP</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">atohex</span><span class="p">(</span><span class="nx">dmp1</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">DQQ</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">atohex</span><span class="p">(</span><span class="nx">dmq1</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">CC</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">atohex</span><span class="p">(</span><span class="nx">coeff</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">dmp1</span> <span class="o">=</span> <span class="nx">dmp1</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">dmq1</span> <span class="o">=</span> <span class="nx">dmq1</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">coeff</span> <span class="o">=</span> <span class="nx">coeff</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Invalid RSA private key&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">encodeRSAtoDER</span><span class="p">(</span><span class="nx">pkey</span><span class="p">)</span> <span class="p">{</span>
+
+  <span class="kd">var</span> <span class="nx">der</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DEREncode</span><span class="p">();</span>
+  <span class="kd">var</span> <span class="nx">rsaPrivate</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RSAPrivate</span><span class="p">(</span><span class="nx">pkey</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">OID_RSA</span><span class="p">,</span> <span class="nx">DER_OID</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">oid</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>byte array</p></div></div><div class="code"><div class="wrapper">  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">n</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">e</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">d</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">p</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">q</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">dmp1</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">dmq1</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">rsaPrivate</span><span class="p">.</span><span class="nx">coeff</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+
+  <span class="kd">var</span> <span class="nx">primes</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">primes</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">os</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">octectstring</span><span class="p">();</span>
+
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">oid</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">os</span><span class="p">);</span>
+
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+  <span class="k">return</span> <span class="nx">base64Encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">atos</span><span class="p">(</span><span class="nx">ret</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">encodeDSAtoDER</span><span class="p">(</span><span class="nx">pkey</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">der</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DEREncode</span><span class="p">();</span>
+
+  <span class="kd">var</span> <span class="nx">prime</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span> 
+  <span class="kd">var</span> <span class="nx">subPrime</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+  <span class="kd">var</span> <span class="nx">base</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">2</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+  <span class="kd">var</span> <span class="nx">privateValue</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">4</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">prime</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">subPrime</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">base</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+
+  <span class="kd">var</span> <span class="nx">params</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">OID_DSA</span><span class="p">,</span> <span class="nx">DER_OID</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">params</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">oid</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">privateValue</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">os</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">octectstring</span><span class="p">();</span>
+
+  <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">oid</span><span class="p">);</span>
+  <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">os</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+
+  <span class="k">return</span> <span class="nx">base64Encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">atos</span><span class="p">(</span><span class="nx">ret</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">encodeInteger</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">_ints</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">derencode</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DEREncode</span><span class="p">();</span>
+  <span class="nx">derencode</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">_ints</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> <span class="nx">DER_INTEGER</span><span class="p">);</span> 
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="nx">derencode</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+  <span class="k">return</span> <span class="nx">base64Encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">atos</span><span class="p">(</span><span class="nx">ret</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">encodePubKey</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pkey</span><span class="p">,</span> <span class="nx">keyType</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">der</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DEREncode</span><span class="p">();</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="nx">keyType</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PUBKEY</span><span class="p">.</span><span class="nx">ALGO</span><span class="p">.</span><span class="nx">RSA</span><span class="o">:</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">OID_RSA</span><span class="p">,</span> <span class="nx">DER_OID</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">oid</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">primes</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">primes</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">os</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">bitstring</span><span class="p">();</span>
+
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">oid</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">os</span><span class="p">);</span>
+    <span class="nx">ret</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+    <span class="k">break</span><span class="p">;</span>
+
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PUBKEY</span><span class="p">.</span><span class="nx">ALGO</span><span class="p">.</span><span class="nx">DSA</span><span class="o">:</span>
+    <span class="kd">var</span> <span class="nx">prime</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span> 
+    <span class="kd">var</span> <span class="nx">subPrime</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+    <span class="kd">var</span> <span class="nx">base</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">2</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+    <span class="kd">var</span> <span class="nx">privateValue</span> <span class="o">=</span> <span class="nx">misc</span><span class="p">.</span><span class="nx">stoa</span><span class="p">(</span><span class="nx">pkey</span><span class="p">[</span><span class="mi">3</span><span class="p">].</span><span class="nx">substr</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">prime</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">subPrime</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">base</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">params</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">OID_DSA</span><span class="p">,</span> <span class="nx">DER_OID</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">params</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">oid</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+
+    <span class="nx">der</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">privateValue</span><span class="p">,</span> <span class="nx">DER_INTEGER</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">os</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">bitstring</span><span class="p">();</span>
+
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">oid</span><span class="p">);</span>
+    <span class="nx">der</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">os</span><span class="p">);</span>
+    <span class="nx">ret</span> <span class="o">=</span> <span class="nx">der</span><span class="p">.</span><span class="nx">sequence</span><span class="p">();</span>
+    <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;INV_PUBKEY_ALGO&quot;</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="nx">base64Encode</span><span class="p">(</span><span class="nx">misc</span><span class="p">.</span><span class="nx">atos</span><span class="p">(</span><span class="nx">ret</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">encodeSecKey</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pkey</span><span class="p">,</span> <span class="nx">pubkey_algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">logger</span><span class="p">.</span><span class="nx">func</span><span class="p">(</span><span class="s2">&quot;encodeSecKey()&quot;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">ret</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="nx">pubkey_algo</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PUBKEY</span><span class="p">.</span><span class="nx">ALGO</span><span class="p">.</span><span class="nx">RSA</span><span class="o">:</span>
+    <span class="nx">ret</span> <span class="o">=</span> <span class="nx">encodeRSAtoDER</span><span class="p">(</span><span class="nx">pkey</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PUBKEY</span><span class="p">.</span><span class="nx">ALGO</span><span class="p">.</span><span class="nx">DSA</span><span class="o">:</span>
+    <span class="nx">ret</span> <span class="o">=</span> <span class="nx">encodeDSAtoDER</span><span class="p">(</span><span class="nx">pkey</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;PGP.ERR.INV_ALGO&quot;</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">ret</span><span class="p">;</span>
+<span class="p">}</span></div></div></div></div></body></html>

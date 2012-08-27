@@ -1,0 +1,118 @@
+<div id="uid-[%= uid_num %]" class="uid">
+  <div class="tabs uid_menu">
+    <a class="tab expandable selected" name="uid-details" href="#uid-details">User ID details</a>
+    [% if (editable) { %]
+    [% if (!revoked) { %]
+      [% if (!secret) { %]
+      <a class="tab expandable" name="uid-sign" href="#uidsign">[%= str.sign %]</a>
+      [% } else { %]
+      <a class="tab expandable" name="uid-edit" href="#editsig">[%= str.edit %]</a>
+      <a class="tab expandable" name="uid-revoke" href="#revokesig">[%= str.revoke %]</a>
+      [% } %]
+    [% } %]
+    <a class="tab" name="uid-delete" href="#delete">[%= str.delete %]</a>
+    [% } %]
+    <div class="tabcontent" name="uid-details-content">
+      <!--  Revocation Signature -->
+      [% if (revoked && revsigs.length) { %]
+      <div class="view_details revocation_details">
+        <span class="revoked revoked_uid">
+          [%= revsigs[0].sig_class %] [%= str.created %] [%= revsigs[0].creation_date %]
+        </span><br />
+        <span>[%= str.reason %]: [%= revsigs[0].revoc_reason %]</span><br />
+        <span>[%= str.comment %]: [%= revsigs[0].revoc_comment %]</span><br />
+      </div>
+      [% } %]
+      <br />
+      <!--  Self Signatures -->
+      [% if (selfsigs.length > 0) { %]
+      <span>[%= selfsigs[0].sig_class %]</span>
+      <span  class="created"> [%= str.created %]: <span class="date"> [%= selfsigs[0].creation_date %]</span></span><br />
+      [% if (selfsigs[0].keyflags.length > 0) { %]
+        [% for (var j=0; j < selfsigs[0].keyflags.length; j++) { %]
+        <span>[%= selfsigs[0].keyflags[j] %]</span><br />
+        [% } %]
+      [% } %]
+      [% } %]
+      [%= str.expiration %]: <span class="date">[%= selfsigs[0].expiration_date %]</span><br />
+      [% if (image != "") { %]
+        <img class="photoid" src="data:image/jpeg;base64,[%= image %]" alt="uid image" />
+      [% } %]
+    </div>
+    <div class="tabcontent" name="uid-sign-content" style="display:none">
+      <table>
+      <tr>
+      <td>[%= str.expires %]</td>
+      <td>
+      <input type="text" id="expiredate" disabled="disabled"></input>
+      </td>
+      <td>
+        <select id="expiredateformat">
+          <option value="never" >[%= str.never %]</option>
+          <option value="days" >[%= str.days %]</option>
+          <option value="weeks" >[%= str.weeks %]</option>
+          <option value="months" >[%= str.months %]</option>
+          <option value="years" >[%= str.years %]</option>
+        </select>
+      </td>
+      </tr>
+      <tr>
+      <td></td>
+      <td>
+      <input type="button" name="update-uid" value="[%= str.update %]"></input>
+      </td>
+      </tr>
+      </table>
+    </div>
+    <div class="tabcontent" name="uid-edit-content" style="display:none">
+      <table>
+      <tr>
+      <td>[%= str.expires %]</td>
+      <td>
+      <input type="text" id="expiredate" disabled="disabled"></input>
+      </td>
+      <td>
+        <select id="expiredateformat">
+          <option value="never" >[%= str.never %]</option>
+          <option value="days" >[%= str.days %]</option>
+          <option value="weeks" >[%= str.weeks %]</option>
+          <option value="months" >[%= str.months %]</option>
+          <option value="years" >[%= str.years %]</option>
+        </select>
+      </td>
+      </tr>
+      <tr>
+      <td></td>
+      <td>
+      <input type="button" name="update-uid" value="[%= str.update %]"></input>
+      </td>
+      </tr>
+      </table>
+    </div>
+    <div class="tabcontent" name="uid-revoke-content" style="display:none">
+      <table>
+      <tr>
+      <td>[%= str.reason %]</td>
+      <td>
+      <select class="revocation-reason">
+         <option selected="selected" value="0">[%= str.rev0x00 %]</option>
+         <option value="32">[%= str.rev0x20 %]</option>
+      </select>
+      </td>
+      </tr>
+      <tr>
+        <td>[%= str.comment %]</td>
+        <td>
+        <input type="text" class="revocation-comment" />
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <button name="uid_revoke_button">[%= str.revoke %]</button>
+        </td>
+      </tr>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+<div id="[%= box_id %]" class="box">
+  <table class="box-header">
+  <tr>
+  [% if (selectable) { %]
+  <td>
+  <a class="box-selector" href="#select-[%= box_id %]">
+    <input class="selector" type="checkbox"></input>
+  </a>
+  </td>
+  [% } %]
+  <td>
+  [% if (progressbox) { %]
+    <span class="icon">[%= icon %]</span>
+    <span class="title progress">[%= title  %]</span> 
+  [% } else if (expandable) { %]
+  <a class="expand" href="#[%= box_id %]">
+    <span class="icon">[%= icon %]</span>
+    <span class="title">[%= title  %]</span>
+  </a>
+  [% } %]
+  </td></tr>
+  </table>
+  <div class="box-content">[%= content %]</div>
+</div>

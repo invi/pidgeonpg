@@ -1,0 +1,22 @@
+Program: PidgeonPG 
+Homepage: https://github.com/invi/pidgeonpg
+License: GPLv3+
+
+Authors
+=======
+invi
+vindio
+trotyl
+
+Other authors
+=============
+
+The files:
+
+  lib/pgp/import.js
+  lib/pgp/openpgpdefs.js
+  lib/pgp/parse-packet.js
+
+are base on the GnuPG project.
+
+Also contains code from the gpg4browsers and domcrypt projects.

@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="en"><head><title>encode/pkcs1</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="encode/pkcs1"><meta name="groc-project-path" content="lib/encode/pkcs1.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/encode/pkcs1.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="cm">/**</span>
+<span class="cm"> * ASN1 object identifiers for hashes (See RFC4880 5.2.2)</span>
+<span class="cm"> */</span>
+<span class="kd">var</span> <span class="nx">hash_headers</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">();</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x20</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x0c</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x08</span><span class="p">,</span><span class="mh">0x2a</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0x48</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0xf7</span><span class="p">,</span><span class="mh">0x0d</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x10</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x21</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x2B</span><span class="p">,</span><span class="mh">0x24</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x14</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x21</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x2b</span><span class="p">,</span><span class="mh">0x0e</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x1a</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x14</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x31</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x0d</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x60</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0x48</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x65</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x20</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>  <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x41</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x0d</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x60</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0x48</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x65</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x30</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x51</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x0d</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x60</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0x48</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x65</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x40</span><span class="p">];</span>
+<span class="nx">hash_headers</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x31</span><span class="p">,</span><span class="mh">0x30</span><span class="p">,</span><span class="mh">0x0d</span><span class="p">,</span><span class="mh">0x06</span><span class="p">,</span><span class="mh">0x09</span><span class="p">,</span><span class="mh">0x60</span><span class="p">,</span><span class="mh">0x86</span><span class="p">,</span><span class="mh">0x48</span><span class="p">,</span><span class="mh">0x01</span><span class="p">,</span><span class="mh">0x65</span><span class="p">,</span><span class="mh">0x03</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x02</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x05</span><span class="p">,</span><span class="mh">0x00</span><span class="p">,</span><span class="mh">0x04</span><span class="p">,</span><span class="mh">0x1C</span><span class="p">];</span>
+
+<span class="cm">/**                        </span>
+<span class="cm"> * return a pseudo-random number in the specified range</span>
+<span class="cm"> * @param from [Integer] min of the random number</span>
+<span class="cm"> * @param to [Integer] max of the random number (max 32bit)</span>
+<span class="cm"> * @return [Integer] a pseudo random number</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_getPseudoRandom</span><span class="p">(</span><span class="nx">from</span><span class="p">,</span> <span class="nx">to</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span><span class="o">*</span><span class="p">(</span><span class="nx">to</span><span class="o">-</span><span class="nx">from</span><span class="p">))</span><span class="o">+</span><span class="nx">from</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * returns the hash size in bytes of the specified hash algorithm type</span>
+<span class="cm"> * @param algo [Integer] hash algorithm type (See RFC4880 9.4)</span>
+<span class="cm"> * @return [Integer] size in bytes of the resulting hash</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_crypto_getHashByteLength</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">hash</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nx">algo</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="c1">// - MD5 [HAC]</span>
+    <span class="k">return</span> <span class="mi">16</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="c1">// - SHA-1 [FIPS180]</span>
+  <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="c1">// - RIPE-MD/160 [HAC]</span>
+    <span class="k">return</span> <span class="mi">20</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">8</span><span class="o">:</span> <span class="c1">// - SHA256 [FIPS180]</span>
+    <span class="k">return</span> <span class="mi">32</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">9</span><span class="o">:</span> <span class="c1">// - SHA384 [FIPS180]</span>
+    <span class="k">return</span> <span class="mi">48</span>
+  <span class="k">case</span> <span class="mi">10</span><span class="o">:</span><span class="c1">// - SHA512 [FIPS180]</span>
+    <span class="k">return</span> <span class="mi">64</span><span class="p">;</span>
+  <span class="k">case</span> <span class="mi">11</span><span class="o">:</span><span class="c1">// - SHA224 [FIPS180]</span>
+    <span class="k">return</span> <span class="mi">28</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="cm">/**</span>
+<span class="cm"> * create a EMSA-PKCS1-v1_5 padding (See RFC4880 13.1.3)</span>
+<span class="cm"> * @param algo [Integer] hash algorithm type used</span>
+<span class="cm"> * @param data [String] data to be hashed</span>
+<span class="cm"> * @param keylength [Integer] key size of the public mpi in bytes</span>
+<span class="cm"> * @return the [String] hashcode with pkcs1padding as string</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_encoding_emsa_pkcs1_encode</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">keylength</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">data2</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+  <span class="nx">data2</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mh">0x00</span><span class="p">);</span>
+  <span class="nx">data2</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nx">keylength</span> <span class="o">-</span> <span class="nx">hash_headers</span><span class="p">[</span><span class="nx">algo</span><span class="p">].</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">-</span> <span class="nx">openpgp_crypto_getHashByteLength</span><span class="p">(</span><span class="nx">algo</span><span class="p">));</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="nx">data2</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mh">0xff</span><span class="p">);</span>
+  <span class="nx">data2</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mh">0x00</span><span class="p">);</span>
+  
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">hash_headers</span><span class="p">[</span><span class="nx">algo</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="nx">data2</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="nx">hash_headers</span><span class="p">[</span><span class="nx">algo</span><span class="p">][</span><span class="nx">i</span><span class="p">]);</span>
+  
+  <span class="nx">data2</span> <span class="o">+=</span> <span class="nx">data</span><span class="p">;</span> <span class="c1">//openpgp_crypto_hashData(algo, data);</span>
+  <span class="k">return</span> <span class="nx">data2</span><span class="p">;</span> <span class="c1">//new BigInteger(util.hexstrdump(data2),16);</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)</span>
+<span class="cm"> * @param message [String] message to be padded</span>
+<span class="cm"> * @param length [Integer] length to the resulting message</span>
+<span class="cm"> * @return [String] EME-PKCS1 padded message</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_encoding_eme_pkcs1_encode</span><span class="p">(</span><span class="nx">message</span><span class="p">,</span> <span class="nx">length</span><span class="p">)</span> 
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">message</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="nx">length</span><span class="o">-</span><span class="mi">11</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">;</span> 
+  <span class="nx">result</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="nx">result</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">length</span> <span class="o">-</span> <span class="nx">message</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">3</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">result</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="nx">openpgp_crypto_getPseudoRandom</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">255</span><span class="p">));</span>
+  <span class="p">}</span>
+  <span class="nx">result</span> <span class="o">+=</span> <span class="nb">String</span><span class="p">.</span><span class="nx">fromCharCode</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="nx">result</span> <span class="o">+=</span> <span class="nx">message</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * create a EME-PKCS1-v1_5 padding (See RFC4880 13.1.1)</span>
+<span class="cm"> * @param message [String] message to be padded</span>
+<span class="cm"> * @param length [Integer] length to the resulting message</span>
+<span class="cm"> * @return [String] EME-PKCS1 padded message</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_encoding_eme_pkcs1_decode</span><span class="p">(</span><span class="nx">message</span><span class="p">,</span> <span class="nx">length</span><span class="p">)</span> 
+<span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">message</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="nx">message</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">35</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * extract the hash out of an EMSA-PKCS1-v1.5 padding (See RFC4880 13.1.3) </span>
+<span class="cm"> * @param data [String] hash in pkcs1 encoding</span>
+<span class="cm"> * @return the hash as string</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">openpgp_encoding_emsa_pkcs1_decode</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span> 
+  <span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="k">else</span> <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="nx">i</span><span class="o">++</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="nx">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">j</span> <span class="o">&lt;</span> <span class="nx">hash_headers</span><span class="p">[</span><span class="nx">algo</span><span class="p">].</span><span class="nx">length</span> <span class="o">&amp;&amp;</span> <span class="nx">j</span><span class="o">+</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">charCodeAt</span><span class="p">(</span><span class="nx">j</span><span class="o">+</span><span class="nx">i</span><span class="p">)</span> <span class="o">!=</span> <span class="nx">hash_headers</span><span class="p">[</span><span class="nx">algo</span><span class="p">][</span><span class="nx">j</span><span class="p">])</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="nx">i</span><span class="o">+=</span> <span class="nx">j</span><span class="p">;</span>  
+  <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="nx">i</span><span class="p">).</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">openpgp_crypto_getHashByteLength</span><span class="p">(</span><span class="nx">algo</span><span class="p">))</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nx">data</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">eme_encode</span> <span class="o">=</span> <span class="nx">openpgp_encoding_eme_pkcs1_encode</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">eme_decode</span> <span class="o">=</span> <span class="nx">openpgp_encoding_eme_pkcs1_decode</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">emsa_encode</span> <span class="o">=</span> <span class="nx">openpgp_encoding_emsa_pkcs1_encode</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">emsa_decode</span> <span class="o">=</span> <span class="nx">openpgp_encoding_emsa_pkcs1_decode</span><span class="p">;</span></div></div></div></div></body></html>

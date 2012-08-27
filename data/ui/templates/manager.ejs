@@ -1,0 +1,42 @@
+<div id="keyring-menu">
+  <div class="keyring-select">
+    <a  class="button" href="#":><span class="dropbutton">&#x25BC;</span>Select</a>
+    <div class="sub-buttons">
+      <a class="all sub-button" href="#">All</a>
+      <a class="none sub-button" href="#">None</a>
+      <a class="invert sub-button" href="#">Invert</a>
+    </div>
+  </div>
+  <div class="selected-menu">
+    <a class="button" href="#">
+      <span class="dropbutton">&#x25BC;</span>
+      <span class="numkeys">10 keys selected</span>
+    </a>
+    <div class="sub-buttons">
+      <a class="export sub-button" href="#">[%= str.exportpublic %]</a>
+      <a class="encrypt sub-button" href="#">[%= str.encrypt %]</a>
+      <a class="update sub-button" href="#">[%= str.update %]</a>
+      <a class="remove sub-button" href="#">[%= str.delete %]</a>
+    </div>
+  </div>
+  <a id="keyring-genkey" href="#":class="button"><span class="button">[%= str.genkey %]</span></a>
+  <div class="import-menu">
+    <a href="#" class="button">
+      <span>[%= str.import %]</span>
+    </a>
+    <!--
+    <div class="sub-buttons">
+      <a class="export sub-button" href="#">[%= str.file %]</a>
+      <a class="encrypt sub-button" href="#">[%= str.clipboard %]</a>
+      <a class="update sub-button" href="#">Key server</a>
+    </div>
+    -->
+  </div>
+  <div class="search-keys">
+    <a class="button" href="#">[%= str.keyserver %]</a>
+  </div>
+  <div class="search">
+    <div class="searchicon"></div><input id="filter" type="text"></input>
+  </div>
+</div>
+<div id="keyring-keys"></div>

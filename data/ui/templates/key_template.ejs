@@ -1,0 +1,171 @@
+<div id="[%= id %]" class="key">
+  <div class="key_menu">
+    <div class="tabs">
+      <a class="tab expandable selected" name="key-details" href="#" onclick="return false">Key Details</a>
+      <a class="tab expandable" name="key-pubexport" href="#" onclick="return false">[%= str.exportpublic %]</a>
+      [% if (secret) { %]
+      <a class="tab expandable" name="key-secexport" href="#" onclick="return false">[%= str.exportsecret %]</a>
+      [% } %]
+      [% if (secret && !revoked && editable) { %]
+      <a class="tab expandable" name="key-revoke" href="#" onclick="return false">[%= str.revoke %]</a>
+      <a class="tab expandable" name="key-createuid" href="#" onclick="return false">[%= str.createuid %]</a>
+      <a class="tab expandable" name="key-createsub" href="#" onclick="return false">[%= str.createsubkey %]</a>
+      [% } %]
+      [% if (editable) { %]
+      <a class="tab" name="key-delete" href="#" onclick="return false">[%= str.delete %]</a>
+      [% } %]
+      [% if (debug) { %]
+      <a class="tab expandable" name="key-debug" href="#" onclick="return false">[%= str.debug %]</a>
+      [% } %]
+      <div class="tabcontent" name="key-details-content">
+        [% if (revoked && revsigs.length) { %]
+        <div class="view_details revocation_details">
+          <span class="revoked revoked_key">
+            [%= revsigs[0].sig_class %] [%= str.created %] [%= revsigs[0].creation_date %]
+          </span><br />
+          <span>[%= str.reason %]: [%= revsigs[0].revoc_reason %]</span><br />
+          <span>[%= str.comment %]: [%= revsigs[0].revoc_comment %]</span><br />
+        </div>
+        [% } %]
+        <div class="view_details key_details">
+          <span class="length">[%= length %]-bit [%= algo %] 
+          [% if (secret) {%]
+            [%= str.secretkey %]
+          [% }else{ %]
+            [%= str.publickey %]
+          [%}%]
+          </span><span  class="created">[%= str.created %]: <span class="date"> [%= creation_date %]</span></span><br />
+          [%= str.fingerprint %]: <span class="fingerprint"> [%= fingerprint %]</span><br />
+          [%= str.expiration %]: <span class="date"> [%= expiration_date %]</span><br />
+          [% if (secret && protected) { %]<span>[%= str.protected %]</span><br />[% } %]
+          [% if (secret && !protected) { %]<span>[%= str.not_protected %]</span><br />[% } %]
+        </div>
+      </div>
+      <div class="tabcontent" name="key-revoke-content">
+        <table>
+        <tr>
+        <td>[%= str.reason %]</td>
+        <td>
+          <select class="revocation-reason">
+             <option selected="selected" value="0">[%= str.rev0x00 %]</option>
+             <option value="1">[%= str.rev0x01 %]</option>
+             <option value="2">[%= str.rev0x02 %]</option>
+             <option value="3">[%= str.rev0x03 %]</option>
+          </select>
+        </td>
+        <tr>
+        <td>[%= str.comment %]</td>
+        <td>
+          <input type="text" class="revocation-comment" />
+        </td>
+        </tr>
+        <tr>
+        <td />
+        <td>
+          <input class="key_revoke_button" type="button" value="Revoke Key" />
+        </td>
+        </tr>
+        </table>
+      </div>
+      <div class="tabcontent" name="key-pubexport-content" style="display:none">
+        <button name="toclipboard">[%= str.clipboard %]</button>
+        <button name="tofile">[%= str.file %]</button>
+        <button name="tokeyserver">[%= str.keyserver %]</button>
+        <pre name="pubexport"></pre>
+      </div>
+      <div class="tabcontent" name="key-secexport-content" style="display:none">
+        <button name="toclipboard">[%= str.clipboard %]</button>
+        <button name="tofile">[%= str.file %]</button>
+        <pre name="secexport"></pre>
+      </div>
+      <div class="tabcontent" name="key-debug-content" style="display:none">
+        <div name="export-message"></div>
+        <pre name="debug"></pre>
+      </div>
+
+      <div class="tabcontent" name="key-createuid-content" style="display:none">
+        <table>
+          <tr>
+            <td >[%= str.name %]</td>
+            <td><input id="name" /></td>
+          </tr>
+          <tr>
+            <td >[%= str.email %]</td>
+            <td><input id="email" /></td>
+          </tr>
+          <tr>
+            <td >[%= str.comment %]</td>
+            <td><input id="comment" /></td>
+          </tr>
+          <tr>
+            <td >[%= str.expires %]</td>
+            <td>
+              <input id="expiredate" disabled="disabled" type="number" />
+            </td>
+            <td>
+              <select id="expiredateformat">
+                <option value="never" >[%= str.never %]</option>
+                <option value="days" >[%= str.days %]</option>
+                <option value="weeks" >[%= str.weeks %]</option>
+                <option value="months" >[%= str.months %]</option>
+                <option value="years" >[%= str.years %]</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td />
+            <td style="float:right">
+              <button name="create-uid">[%=str.pgp_createuid %]</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="tabcontent" name="key-createsub-content" style="display:none">
+        <table>
+          <tr>
+            <td>[%= str.key_type %]</td>
+            <td>
+              <select id="pgp-genkey-key-type">
+                <option value="RSA">RSA</option>
+                <option value="ELGAMAL">ElGamal</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>[%= str.key_length %]</td>
+            <td>
+              <select id="pgp-genkey-key-length">
+                <option value="1024">1024</option>
+                <option value="2048" selected="selected">2048</option>
+                <option value="4096">4096</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td >[%= str.expires %]</td>
+            <td>
+              <input id="expiredate" type="number" />
+            </td>
+            <td>
+              <select id="expiredateformat">
+                <option value="never" >[%= str.never %]</option>
+                <option value="days" >[%= str.days %]</option>
+                <option value="weeks" >[%= str.weeks %]</option>
+                <option value="months" >[%= str.months %]</option>
+                <option value="years" >[%= str.years %]</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <button name="create-sub">[%= str.pgp_createsub %]</button></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <ul name="key_uids"></ul>
+  <ul name="key_subkeys"></ul>
+</div>

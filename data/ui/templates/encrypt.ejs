@@ -1,0 +1,25 @@
+<div class="dialog-header">
+  <a class="closeicon" href="#">&#x2715;</a>
+  <h1 class="dialog-title">[%= str.encrypt %]</h1>
+</div>
+<div class="innersection">
+  <form class="form">
+    <span id="pgp-encrypt-recipients-str">[%= str.pgp_encrypt_recipients_str %]</span><br />
+    <select id="pgp-encrypt-recipients-list"></select><br />
+    <hr />
+    <div>
+      <label>[%= str.pgp_encript_sign_check %]</label>
+      <input id="pgp-sign-check" type="checkbox" />
+      <br />
+      <select id="pgp-enc-and-sign-recipients-list"></select>
+    </div>
+    <hr />
+    <span>[%= str.pgp_encrypt_text_str %]</span>
+    <br />
+    <textarea id="pgp-encrypt-text" cols="64" rows="20"></textarea>
+    <br />
+    <input type="button" id="pgp-encrypt-button" value="[%= str.pgp_encrypt_button %]" />
+    <br />
+  </form>
+  <div class="results"></div>
+</div>

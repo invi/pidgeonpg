@@ -1,0 +1,812 @@
+/* +main */
+body {
+  font: 14px "helvetica neue", helvetica, arial, sans-serif;
+  height:0px;
+  padding: 0px;
+  margin: 0px;
+  background: url("../graphics/linen.png") ;
+}
+h1 {
+  margin-top: 5px;
+  margin-bottom: 40px;
+}
+select {
+  font-family: monospace;
+}
+ul {
+  margin: 0px;
+  padding: 0px;
+}
+li {
+  margin: 0px;
+  padding: 0px;
+  list-style-type: none;
+}
+pre {
+  margin: 0px;
+  padding: 10px 0px;
+}
+hr {
+  margin: 20px 0px;
+}
+form {
+  padding: 0px;
+  margin: 0px;
+}
+table {
+  padding: 0px;
+  margin: 0px;
+}
+thead {
+  padding: 0px;
+  margin: 0px;
+}
+tbody {
+  padding: 0px;
+  margin: 0px;
+}
+td {
+  padding: 0px;
+  margin: 0px;
+}
+a {
+  color: black;
+  text-decoration: none;
+}
+/* -main */
+
+/* +notifications */
+#notifications > .fade {
+  opacity:0;
+  -moz-transition:opacity 0.5s linear;
+}
+
+#notifications {
+  position: fixed;
+  top: 0px;
+  width: 100%;
+}
+
+#notifications .background {
+  position: fixed;
+  text-align: center;
+  top: 0px;
+  left: 0px;
+  opacity: 0.8;
+  background-color:black;
+  bottom: 0px;
+  right: 0px;
+}
+
+#notifications .msg {
+  width:100%;
+  padding:20px 20px;
+  left:0px;
+  right:0px;
+  margin-left:auto;
+  margin-right:auto;
+  -moz-transition-delay:0s;
+  opacity:1;
+  background-color: white;
+  border-bottom: 1px solid black;
+}
+/* -notifications */
+
+/* +dialogs */
+.innersection {
+  position: absolute;
+  top: 70px;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  padding: 20px;
+  overflow-y: auto;
+}
+.innersection table {
+  width: 100%;
+}
+ul.results {
+  margin-left: 20px;
+}
+ul.nonempty {
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+/* +dialogs menu*/
+#menu {
+  position: relative;
+  display: inline-block;
+  background: url("../graphics/linen.png") ;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 1px 5px 2px 0px black;
+  border-radius: 0px 0px 4px 0px;
+  vertical-align: middle;
+  text-align: left;
+  padding: 13px 10px;
+  z-index: 10;
+}
+#options a,
+#menu a {
+  border: 1px solid black;
+  background-color: black;
+  border-radius: 1px;
+  margin: 0px 10px;
+  box-shadow: inset 0px 1px 5px 1px lightgray, 0 2px 1px black;
+  color: white;
+  line-height: 1;
+  padding: 10px 5px;
+  text-align: center;
+  text-shadow: 0 1px 0 #888;
+  display: inline-block;
+  min-width: 120px; 
+}
+#menu a:link,
+#menu a:visited,
+#menu a:active {
+}
+#menu a:hover {
+  box-shadow: inset 0px 1px 6px 3px lightgray, 0 2px 1px black;
+  text-shadow: 0 1px 0 #555;
+}
+#menu a.selected {
+  color: black;
+  margin-top: 2px;
+  background-color: #cccccc;
+  text-shadow: 0 1px 0 #ddd;
+    -webkit-box-shadow: inset 0 0 1px 1px #eaeaea;
+    -moz-box-shadow: inset 0 0 1px 1px #eaeaea;
+    box-shadow: inset 0 0 1px 1px #eaeaea;
+    color: #222;
+    cursor: pointer; 
+}
+/* +dialogs menu*/
+
+#container {
+  position:fixed;
+  top: 20px;
+  right: 0px;
+  left: 0px;
+  bottom: 20px;
+  display: none;
+  background: url("../graphics/linen.png");
+  width: 780px;
+  margin: 0px auto;
+  text-align: left;
+  z-index:100;
+}
+/* -dialog-open */
+
+/* +box */
+.box {
+  text-align:left;
+}
+.box-selector {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 3px;
+}
+.box-header a.keylink { 
+  display: inline;
+  color: blue;
+}
+.keylink:hover { 
+  font-weight: bold;
+}
+.key .last {
+  border-bottom: 1px solid #ddd;
+}
+.key .tabs {
+  padding: 8px;
+}
+.key {
+  padding-bottom: 8px;
+}
+.uid_sig .tabs,
+.uid .tabs {
+  padding: 8px;
+}
+[name='key_subkeys'] ,
+[name='key_uids'] {
+  margin-left: 10px;
+}
+.box .content {
+  padding-left: 20px; 
+}
+.box .content.fixed {
+  padding-left: 0px; 
+  padding-bottom: 0px;
+}
+.box-container {
+  text-align: right;
+  margin-bottom: 20px;
+}
+.close-button { 
+  display: inline-block;
+  padding: 5px;
+  margin-top: 20px;
+  margin-right: 20px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  border: 1px solid #dddddd;
+}
+.close-button:hover { 
+  background-color: #dddddd;
+}
+.onprogress > a:hover {
+  cursor: none;
+}
+/* -box */
+
+/* +import */
+ul#pgp-parsed-keys {
+  text-align: right;
+}
+/* -import */
+
+
+/* +tabs */
+.tabs {
+  display: inline-block;
+  margin: 0px 0px;
+  position: relative;
+  z-index: 0;
+}
+.tabs a.expandable.selected, 
+.tabs a.selected:hover {
+  background-color: #dddddd;
+  color: black;
+}
+.tabs a.selected {
+  padding-bottom: 7px;
+}
+.tabexpand {
+  width: 15px;
+  display: inline-block;
+  vertical-align: top;
+  text-align: left;
+
+}
+.tabs a:hover {
+  border: 1px solid black;
+}
+.tabs a {
+  display: inline-block;
+  background: #666;
+  border-radius: 2px;
+  padding: 2px 10px;
+  text-align: center;
+  min-width: 100px; 
+}
+a.download {
+  background-color:#ddd;
+  color: black;
+  border: 1px solid #dddddd;
+}
+a.download:hover {
+  background-color:black;
+  color: white;
+  border: 1px solid #dddddd;
+}
+.tabcontent {
+  display: none;
+  position: relative;
+  z-index: 10;
+  padding: 10px;
+  margin-top: -2px;
+  background-color: #ddd;
+  border: 1px solid #bbb;
+}
+/* -tabs */
+
+/* +sections */
+.section {
+  display: none;
+  height: auto;
+  top: 0px;
+  left: 0px;
+  margin: 0px 0px;
+  background: url("../graphics/linen.png") ;
+}
+.section.selected {
+  display: block;
+}
+/* -sections */
+
+/* +encrypt */
+#pgp-encrypt-text-result {
+  width: 300px;
+}
+/* -encrypt*/
+
+/* +keyring */
+#background {
+  position: relative;
+}
+#keyring-keys {
+  position: fixed;
+  padding-bottom: 20px;
+  margin: 10px;
+  top: 120px;
+  bottom: 20px;
+  left: 10px;
+  right: 10px;
+  overflow: auto;
+  border: 1px solid #888;
+  border-radius: 2px;
+  box-shadow: 0px 0px 2px black;
+}
+.numkeys {
+  display: inline-block;
+  min-width: 110px;
+}
+#keyring-keys li:nth-child(odd) {
+  background-color: #f3f3f3;
+}
+#keyring-keys li:nth-child(even) {
+  background-color: #fafafa;
+}
+#keyring-keys > [name="list"] {
+}
+#keyring-keys > [name="list"] > li {
+}
+#keyring-keys > [name="list"] > li:hover {
+}
+ul#keyring-keys-list {
+}
+/* -keyring */
+
+/* +uid */
+[name='uid'] span {
+  display: block;
+}
+/* -uid*/
+
+/* +genkey*/
+input[type="number"][disabled] {
+  background-color: #999999;
+}
+.section td {
+  padding-bottom: 5px;
+  padding-right: 5px;
+}
+.section td:first-child {
+  text-align: right;
+}
+.genkey-box {
+  margin: 2px 0px;
+}
+.field-error {
+  background-color: IndianRed;
+}
+
+/* -genkey*/
+
+/* +keyview */
+.revoked,
+.invalid,
+.invalid_key {
+  color: IndianRed;
+  font-family: monospace;
+  margin: 0px 4px;
+}
+.tab {
+  cursor: pointer;
+  display: inline-block;
+}
+.keyid {
+  color: ForestGreen;
+}
+.keypub {
+  color: black;
+  font-weight: bold;
+}
+.sec {
+  color: seagreen;
+}
+.keysec {
+  color: black;
+  font-weight: bold;
+}
+.keylength,
+.keyid, 
+.keysec,
+.keypub {
+  font-family: monospace;
+}
+ul[name='key_uids'] .content {
+  margin-left: 20px;
+  padding-left: 0px;
+  background-color: white;
+}
+.photoid {
+  float:left;
+  margin-right: 5px;
+}
+a.fixed {
+  background-color: #dddddd;
+}
+.keytitle {
+  margin-left: 5px;
+}
+/* -keyview */
+
+/* +??? */
+#background {
+}
+#background .section {
+  position: absolute;
+}
+/* -??? */
+
+/* +welcome */
+#welcome {
+  margin-left:20px;
+  margin-top:20px;
+}
+#welcome.selected {
+  display: block;
+}
+#welcome a {
+  font-weight: bold;
+  color: blue;
+}
+#wlogo {
+  background: url("../graphics/logo.png") no-repeat;
+  width: 128px;
+  height: 128px;
+}
+/* -welcome */
+
+/* +saveButtons */
+[name='copymenu'] {
+  background-color: #ddd;
+  padding: 5px;
+}
+[name='copymenu'] button {
+  margin-right: 5px;
+}
+[name='box-result'] {
+  padding: 5px;
+}
+/* -saveButtons */
+
+.hkpkey_uids {
+  margin-left: 17px;
+}
+.hkpkey:hover {
+  background-color: #ddd;
+  cursor: pointer;
+}
+.hkpkey {
+  margin-bottom: 
+  border: 1px solid #ddd;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  padding: 5px;
+}
+.hkpkey_uid {
+  margin-left: 20px;
+}
+.hkpinput {
+  width: 10px;
+  display: inline-block;
+}
+#keyserver-buttons {
+  padding: 10px;
+}
+#keyserver-search-result-box.display {
+  display: block;
+  padding: 10px;
+}
+
+
+.revocation_details {
+  border: 2px solid IndianRed;
+  padding: 3px;
+  display: inline-block;
+}
+
+.revocation_details span {
+  font-weight: bold;
+  display: inline-block;
+}
+
+.fingerprint {
+  color: seagreen;
+}
+.date {
+  color: blue;
+}
+.view_details {
+  margin-bottom: 5px;
+}
+.manager-menu {
+  margin: 20px 10px;
+  display: inline-block;
+  vertical-align: top;
+
+}
+.filter {
+  margin-right: 10px;
+}
+
+#container.show {
+  display: block;
+} 
+.dialog {
+  display: none;
+}
+.dialog.show {
+  display: block;
+}
+#dialogs {
+  position: relative;
+  display: none;
+}
+#dialogs.show {
+  display: block;
+}
+#dialogs.ontop {
+  display: block;
+  z-index: 100;
+}
+.dialog.show {
+  display: block;
+}
+#container-background.show ,
+#container.show {
+  display: block;
+} 
+#container-background {
+  display: none;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color:black;
+  opacity: 0.75;
+  z-index: 100;
+}
+
+#keyring-keys .box-template .box-header {
+/*
+  box-shadow: inset 0px 0px 2px black;
+  */
+  border: 1px solid gray;
+}
+#keyring-keys .box-template:nth-child(odd) .box-header {
+  background-color: #ddd;
+}
+#keyring-keys .box-template.selected:nth-child(odd) .box-header {
+  background-color: #FFEB7E;
+}
+#keyring-keys .box-template:nth-child(even) .box-header {
+  background-color: #eee;
+}
+#keyring-keys .box-template.selected:nth-child(even) .box-header {
+  background-color: #FFF0A2;
+}
+#keyring-keys .box-template .box-header:hover  {
+  box-shadow: inset 0px 0px 1px 2px forestgreen;
+}
+.box-header .icon {
+  display: inline-block;
+  vertical-align: middle;
+  text-align: center;
+  width: 20px;
+  padding: 2px 2px;
+  padding-top: 0px;
+  font-size:10px;
+  color: #888;
+}
+.box-header .icon.closable {
+  font-size: 30px;
+  cursor: pointer;
+
+}
+.box-header .icon img {
+  width: 20px;
+}
+.box-header .title.progress {
+  font-size: 20px;
+  display: inline;
+}
+.box-header .title {
+  display: inline-block;
+  padding: 5px;
+}
+.box-header a {
+  display: inline-block;
+  width: 100%;
+}
+table.box-header {
+  width: 100%;
+  table-layout: fixed;
+}
+.box-header td:nth-child(1) {
+  width: 20px;
+}
+.box-header td:nth-child(2) {
+}
+#keyring-menu {
+  margin: 30px 20px 10px;
+  text-align: center;
+}
+#keyring-menu .search {
+  padding-top: 5px; 
+  display:inline-block;
+  text-align: right;
+  float: right;
+}
+
+#keyring-menu .searchicon {
+  background: url('../graphics/advanced-search_16x16.png') no-repeat;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+#keyring-encrypt,
+#keyring-export,
+#keyring-update,
+#keyring-remove {
+  background-color: #aaa;
+  color: #bbb;
+}
+.selected-menu ,
+.keyring-select {
+  display: inline-block;
+  position: relative;
+  float:left;
+}
+.search-keys,
+.import-menu {
+  display: inline-block;
+  position: relative;
+}
+
+.import-menu:hover .sub-buttons.show,
+.selected-menu:hover .sub-buttons.show,
+.keyring-select:hover .sub-buttons.show {
+  display: block;
+  position: absolute;
+  left:0px;
+  top: 15px;
+  text-align: center;
+}
+
+.sub-buttons .sub-button {
+}
+.sub-buttons {
+  position: absolute;
+  display: none;
+  margin-top: 9px;
+  padding: 10px;
+  top: 0px;
+  z-index: 100;
+  background-color: #888;
+  border: 1px solid black;
+  border-radius: 3px;
+}
+.button,
+.sub-button {
+  border: 1px solid black;
+  border-radius: 3px;
+  margin: 2px 0px;
+  font-weight: bold;
+  color: white;
+  line-height: 1;
+  padding: 3px 20px;
+  text-align: center;
+  min-width: 80px;
+  display: inline-block;
+}
+.button {
+  background-color: black;
+  margin-right: 10px;
+}
+#keyring-genkey {
+  margin-left: 30px;
+}
+.sub-button {
+  background-color: black;
+}
+
+#keyring-menu a,
+#keyring-menu span,
+#keyring-menu div  {
+}
+.closeicon { 
+  width: 40px;
+  float: right;
+  padding: 5px 0px;
+  font-size: 24px;
+  border-radius: 2px;
+  border: 1px solid #888;
+  color: #888;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+}
+.closeicon:hover { 
+  border: 1px solid black;
+  color: black;
+}
+.innertitle {
+  display: inline-block;
+  font-size: 24px;
+
+}
+
+.numselected-keys2 {
+  margin: 0px 20px;
+  display: inline-block;
+}
+
+.numselected-keys {
+  margin: 0px 20px;
+  border-right: 1px solid #aaa;
+  display: inline-block;
+  padding: 5px;
+  min-width: 110px;
+  text-align: center;
+}
+
+.dropbutton { 
+  vertical-align:center;
+  float:left;
+  font-size:10px;
+  margin-right: 10px;
+}
+
+#options {
+  text-align: right;
+  float: right;
+  position: relative;
+  display: inline-block;
+  background: url("../graphics/linen.png") ;
+  border-bottom: 1px solid #ddd;
+  box-shadow: -1px 5px 2px 0px black;
+  vertical-align: middle;
+  text-align: left;
+  padding: 13px 0px;
+  z-index: 10;
+  border-radius: 0px 0px 0px 4px;
+}
+.box a {
+  margin: -1px;
+}
+.box a.tab {
+  margin: 0px 5px;
+}
+.key .tabs a {
+  color: white;
+  border: 1px solid #444;
+  font-size: 12px;
+}
+.key .tabs a:hover {
+  background-color: #888;
+}
+.key .tabs a.selected:hover {
+  background-color: #888;
+}
+.key .tabs a.expandable.selected {
+  background-color: #aaa;
+  color: white;
+  position: relative;
+  z-index: 1000;
+  border-bottom: none;
+}
+.key .tabcontent {
+  color: white;
+  background-color: #aaa;
+  border: 1px solid black;
+}
+.dialog-header {
+  padding: 20px 20px 0px 20px;
+
+}

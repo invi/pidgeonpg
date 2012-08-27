@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><title>index</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content=""><meta name="groc-document-path" content="index"><meta name="groc-project-path" content="README.md"><link rel="stylesheet" type="text/css" media="all" href="assets/style.css"><script type="text/javascript" src="assets/behavior.js"></script><body><div id="meta"><div class="file-path">README.md</div></div><div id="document"><div class="segment"><div class="comments"><div class="wrapper"><h2 id="pidgeon-privacy-guard">Pidgeon Privacy Guard</h2>
+
+<p>Consists in JavaScript implementation of the OpenPGP protocol [RFC4880]. </p>
+
+<h3 id="requirements">Requirements</h3>
+
+<p>Mozilla Firefox >= 9.0 and the  Network Security Services (NSS) library.</p>
+
+<h3 id="features">Features</h3>
+
+<h4 id="key-pair-generation">Key pair generation</h4>
+
+<ul>
+<li>RSA (1024/2048/4096 bits)</li>
+<li>DSA (1024 bits)</li>
+<li>ElGamal (1024 bits)</li>
+</ul>
+
+<h4 id="supported-asymmetric-algorithms">Supported asymmetric algorithms</h4>
+
+<ul>
+<li>RSA encryption and signatures (1024/2048/4096 bits)</li>
+<li>DSA signatures (1024/2028/3072 bits)</li>
+<li>ElGamal encryption (1024/2048/3072 bits)</li>
+</ul>
+
+<h4 id="tested-symmetric-algorithms">Tested symmetric algorithms</h4>
+
+<ul>
+<li>Cast5</li>
+<li>AES-256</li>
+</ul>
+
+<h4 id="compression-algorightms-so-far-only-used-for-decompression">Compression algorightms (so far, only used for decompression)</h4>
+
+<ul>
+<li>Zip</li>
+<li>Zlib</li>
+<li>Bzip2</li>
+</ul>
+
+<h4 id="limitations">Limitations</h4>
+
+<p>Certificate revocation signatures.</p>
+
+<h3 id="building-instructions">Building instructions</h3>
+
+<p>By now there is only instructions to run from the addon-sdk. Building
+the xpi package from the addon-sdk is broken.</p>
+
+<ol>
+<li><p>Clone the Addon-SDK environment for Mozilla Firefox:</p>
+
+<p><code>$ git clone https://github.com/mozilla/addon-sdk.git</code></p></li>
+<li><p>Load the Addon-SDK environment from it's path:</p>
+
+<p><code>addon-sdk$ source bin/activate</code></p></li>
+<li><p>Clone the latest PidgeonPG code:</p>
+
+<p><code>$git clone git://github.com/invi/pidgeonpg.git</code></p></li>
+<li><p>Enter the PidgeonPG path and run:</p>
+
+<p><code>pidgeonpg$ cfx xpi</code></p></li>
+</ol>
+
+<p>This steps will create the file <code>pidgeonpg.xpi</code> inside the PidgeonPG path, ready to install.</p>
+
+<h3 id="documentation">Documentation</h3></div></div></div></div></body></html>

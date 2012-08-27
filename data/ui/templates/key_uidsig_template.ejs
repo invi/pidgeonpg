@@ -1,0 +1,20 @@
+<div name="sig" class="uid_sig">
+[% if (missing) { %]
+  <span class="invalid">[[%= str.unverified %]] </span>[%= str.missing %][%= title %] <a class="download" href="#fetchkey" onclick="return false">[%= str.download %]</a><br />
+[% } else if (verified) { %]
+  <span class="invalid">[[%= str.unverified %]] </span><span>[%= title %]</span><br />
+[% } else { %]
+  <span >[%= title %]</span><br />
+[% } %]
+  <!--
+  <span>Extiste</span><br />
+  <div class=".sig_menu" />
+    <div class="tabs">
+      <a class="tab" name="key-delete" href="#" onclick="return false">[%= str.delete %]</a>
+    </div>
+    <div class="tabcontent" name="key-delete-content">
+    </div>
+  </div>
+  -->
+  <span> [%= sig_class %] </span><span  class="created">[%= str.created %]<span class="date"> [%= creation_date %]</span></span><br />
+</div>

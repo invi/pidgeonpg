@@ -1,0 +1,13 @@
+{
+    "name": "pidgeonpg", 
+    "license": "GPLv3", 
+    "author": "invi, vindio", 
+    "contributors": ["trotyl"],
+    "homepage": "https://github.com/invi/pidgeonpg",
+    "version": "0.2", 
+    "icon": "data/graphics/logo.png",
+    "icon64": "data/graphics/logo64.png",
+    "fullName": "PigeonPG for Firefox", 
+    "id": "jid1-0cd93xok4MNXiQ", 
+    "description": "OpenPGP protocol implementation for Mozilla Firefox"
+}

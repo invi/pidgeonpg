@@ -1,0 +1,40 @@
+body {
+
+  font-family: monospace;
+  background-color: #353535;
+  color: #eeeeee;
+
+}
+
+table {
+  width: 100%;
+}
+
+td {
+  padding: 5px;
+  margin: 5px;
+}
+
+li {
+  margin-top: 5px;
+  list-style-type:none;
+  margin-left: 0px;
+}
+
+ul {
+  padding-left: 10px;
+}
+
+
+a {
+  color: #bbbbbb;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #F2B72E;
+}
+
+.panel-title {
+  font-size: 1.2em;
+}

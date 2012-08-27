@@ -1,0 +1,331 @@
+<!DOCTYPE html><html lang="en"><head><title>pgp/key</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="pgp/key"><meta name="groc-project-path" content="lib/pgp/key.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/pgp/key.js</div></div><div id="document"><div class="segment"><div class="comments"><div class="wrapper"><h1 id="key">Key</h1></div></div></div><div class="segment"><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="nx">PGP</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/openpgpdefs&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">Signature</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;pgp/signature&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">Subkey</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;pgp/subkey&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">UserId</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;pgp/userid&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">KeyTrait</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;pgp/key-trait&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">misc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/misc&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">asymcrypto</span>  <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto/asym&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">getStr</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/lang&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">Logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;util/logger&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;util/logger&quot;</span><span class="p">).</span><span class="nx">create</span><span class="p">(</span><span class="s2">&quot;key.js&quot;</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h2 id="class-key">Class: Key</h2>
+
+<p>The Key class is meant for dealing with key packets.
+It can be constructed in a variety of ways.</p>
+
+<h3 id="new-keykeypacket-logger">new Key(keypacket, logger)</h3>
+
+<ul>
+<li><code>keypacket</code> Object - represents the primary key data packet</li>
+<li><code>logger</code> Logger object - instance for logging purposes</li>
+</ul>
+
+<p>Creates a primary key from the given <code>keypacket</code> <code>object</code>.</p></div></div><div class="code"><div class="wrapper"><span class="kd">function</span> <span class="nx">Key</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">KeyTrait</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">);</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">_key</span> <span class="o">=</span> <span class="p">{</span> 
+    <span class="nx">pkt</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+    <span class="nx">uids</span><span class="o">:</span> <span class="p">[</span> <span class="p">],</span>       
+    <span class="nx">subkeys</span><span class="o">:</span> <span class="p">[</span> <span class="p">],</span>  
+    <span class="nx">revsigs</span><span class="o">:</span> <span class="p">[</span> <span class="p">],</span>
+  <span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>Packet Classes Instances</p></div></div><div class="code"><div class="wrapper">  <span class="nx">key</span><span class="p">.</span><span class="nx">uids</span> <span class="o">=</span> <span class="p">[</span> <span class="p">];</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">subkeys</span> <span class="o">=</span> <span class="p">[</span> <span class="p">];</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">revsigs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">];</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">status</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">verified</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="nx">valid</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="nx">revoked</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="p">};</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">logger</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="nx">key</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h2 id="helper-functions">Helper functions</h2></div></div></div><div class="segment"><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">generate</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pars</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">keyType</span> <span class="o">=</span> <span class="nx">pars</span><span class="p">.</span><span class="nx">keyType</span> <span class="o">||</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">ALGO</span><span class="p">.</span><span class="nx">RSA</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">subkeyType</span> <span class="o">=</span> <span class="nx">pars</span><span class="p">.</span><span class="nx">subkeyType</span> <span class="o">||</span> <span class="nx">keyAlgo</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">keypairBits</span> <span class="o">=</span> <span class="nx">pars</span><span class="p">.</span><span class="nx">keypairBits</span> <span class="o">||</span> <span class="mi">2048</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">expireseconds</span> <span class="o">=</span> <span class="nx">pars</span><span class="p">.</span><span class="nx">expireseconds</span> <span class="o">||</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">asymcrypto</span><span class="p">.</span><span class="nx">generateKeypair</span><span class="p">(</span><span class="nx">keyType</span><span class="p">,</span> <span class="nx">keypairBits</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">pkey</span><span class="p">,</span> <span class="nx">skey</span><span class="p">,</span> <span class="nx">ski</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="k">return</span> <span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><pre><code> if (err) logger.error(err);
+ console.log(err, pkey, skey, ski);
+</code></pre></div></div><div class="code"><div class="wrapper">      <span class="k">try</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">ts</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">);</span> 
+        <span class="kd">var</span> <span class="nx">newkey</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Key</span><span class="p">();</span>
+        <span class="nx">newkey</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">pkt</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="nx">pkttype</span><span class="o">:</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">SECRET_KEY</span><span class="p">,</span>
+          <span class="nx">timestamp</span><span class="o">:</span> <span class="nx">ts</span><span class="p">,</span>
+          <span class="nx">expiredate</span><span class="o">:</span> <span class="nx">ts</span> <span class="o">+</span> <span class="nx">expireseconds</span><span class="p">,</span> 
+          <span class="nx">pubkey_algo</span><span class="o">:</span> <span class="nx">keyType</span><span class="p">,</span>
+          <span class="nx">pkey</span><span class="o">:</span> <span class="nx">pkey</span><span class="p">,</span>
+          <span class="nx">skey</span><span class="o">:</span> <span class="nx">skey</span><span class="p">,</span>
+          <span class="nx">ski</span><span class="o">:</span> <span class="nx">ski</span><span class="p">,</span>
+        <span class="p">};</span>
+        <span class="nx">newkey</span><span class="p">.</span><span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="s2">&quot;Key.generate&quot;</span><span class="p">);</span>
+        <span class="nx">newkey</span><span class="p">.</span><span class="nx">hash_public_key</span><span class="p">();</span>
+        <span class="nx">newkey</span><span class="p">.</span><span class="nx">generateUserId</span><span class="p">(</span><span class="nx">pars</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">expireseconds</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> 
+          <span class="k">else</span>
+            <span class="nx">newkey</span><span class="p">.</span><span class="nx">generateSubkey</span><span class="p">(</span><span class="nx">subkeyType</span><span class="p">,</span> <span class="nx">keypairBits</span><span class="p">,</span> <span class="nx">expireseconds</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+              <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+              <span class="k">else</span> <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">newkey</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">});</span>
+      <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+    <span class="p">});</span> 
+  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">generateSubkey</span>  <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">keypairBits</span><span class="p">,</span> <span class="nx">expireseconds</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+  <span class="nx">asymcrypto</span><span class="p">.</span><span class="nx">generateKeypair</span><span class="p">(</span><span class="nx">algo</span><span class="p">,</span> <span class="nx">keypairBits</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">getSki</span><span class="p">(),</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">pkey</span><span class="p">,</span> <span class="nx">skey</span><span class="p">,</span> <span class="nx">ski</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">ts</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">);</span> 
+      <span class="kd">var</span> <span class="nx">subkey_pkt</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">pkttype</span><span class="o">:</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">SECRET_SUBKEY</span><span class="p">,</span>
+        <span class="nx">timestamp</span><span class="o">:</span> <span class="nx">ts</span><span class="p">,</span>
+        <span class="nx">pubkey_algo</span><span class="o">:</span> <span class="nx">algo</span><span class="p">,</span>
+        <span class="nx">pkey</span><span class="o">:</span> <span class="nx">pkey</span><span class="p">,</span>
+        <span class="nx">skey</span><span class="o">:</span> <span class="nx">skey</span><span class="p">,</span>
+        <span class="nx">ski</span><span class="o">:</span> <span class="nx">ski</span><span class="p">,</span>
+        <span class="nx">version</span><span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+      <span class="p">}</span>
+      <span class="kd">var</span> <span class="nx">subkey</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">(</span><span class="nx">subkey_pkt</span><span class="p">);</span>
+      <span class="nx">subkey</span><span class="p">.</span><span class="nx">generateSelfSig</span><span class="p">(</span><span class="nx">expireseconds</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+  <span class="p">});</span>
+<span class="p">}</span>
+
+
+<span class="nx">Key</span><span class="p">.</span><span class="nx">loadFromPacket</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pkt</span><span class="p">,</span> <span class="nx">logger</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Key</span><span class="p">();</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">pkt</span> <span class="o">=</span> <span class="nx">pkt</span><span class="p">;</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">hash_public_key</span><span class="p">();</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">logger</span> <span class="o">=</span> <span class="nx">logger</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nx">key</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="class-method-keyload-key">Class Method: Key.load(_key)</h3>
+
+<ul>
+<li><code>_key</code> Object - represents the key from storage data packets</li>
+</ul>
+
+<p>Returns a Key class instance.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">load</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">_key</span><span class="p">,</span> <span class="nx">verified</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Key</span><span class="p">();</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">_key</span> <span class="o">=</span> <span class="nx">_key</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span><span class="nx">_key</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>  <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">sig</span> <span class="o">=</span> <span class="nx">key</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">(</span><span class="nx">_key</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">pkt</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">verified</span><span class="p">)</span> <span class="nx">sig</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="nx">_uid</span><span class="o">=</span><span class="nx">_key</span><span class="p">.</span><span class="nx">uids</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span> <span class="nx">i</span><span class="o">&lt;</span><span class="nx">_key</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>  <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">uid</span> <span class="o">=</span> <span class="nx">UserId</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">_uid</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">verified</span><span class="p">);</span>
+    <span class="nx">key</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">uid</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="nx">_subkey</span><span class="o">=</span><span class="nx">_key</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span><span class="nx">i</span><span class="o">&lt;</span><span class="nx">_key</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">subkey</span> <span class="o">=</span> <span class="nx">Subkey</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">_subkey</span><span class="p">,</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">verified</span><span class="p">);</span>
+    <span class="nx">key</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">subkey</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="nx">key</span><span class="p">.</span><span class="nx">updateStatus</span><span class="p">();</span>
+  <span class="k">return</span> <span class="nx">key</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addSignature</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">newsig</span><span class="p">)</span> <span class="p">{</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>var max = null;
+ for (var i=this.selfsigs.length-1;i>=0;i--) 
+   if (newsig.<em>sig.timestamp > sigs[i].</em>sig.timestamp) 
+     max = i;</p>
+
+<p>if (max!=null) 
+   sigs.splice(max, 0, newsig);
+ else
+   sigs.push(newsig);
+ return sigs;</p></div></div><div class="code"><div class="wrapper"><span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="keyupdatestatus">key.updateStatus()</h3>
+
+<p>Fills-in the key validity status.</p></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="keyaddpacketpkt">key.addPacket(pkt)</h3>
+
+<p><code>pkt</code> Parsed <code>object</code> packet belonging to the key.</p>
+
+<p>Return the <code>object</code> instance of the data packet.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addPacket</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">pkt</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="nx">pkt</span><span class="p">.</span><span class="nx">pkttype</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">PUBLIC_SUBKEY</span><span class="o">:</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">SECRET_SUBKEY</span><span class="o">:</span>
+      <span class="kd">var</span> <span class="nx">subkey</span> <span class="o">=</span> <span class="nx">Subkey</span><span class="p">.</span><span class="nx">load</span><span class="p">({</span><span class="nx">pkt</span><span class="o">:</span> <span class="nx">pkt</span><span class="p">},</span> <span class="k">this</span><span class="p">)</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">subkey</span><span class="p">);</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">subkey</span><span class="p">.</span><span class="nx">_subkey</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nx">subkey</span><span class="p">;</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">USER_ID</span><span class="o">:</span>
+      <span class="kd">var</span> <span class="nx">uid</span> <span class="o">=</span> <span class="nx">UserId</span><span class="p">.</span><span class="nx">load</span><span class="p">({</span><span class="nx">pkt</span><span class="o">:</span> <span class="nx">pkt</span><span class="p">},</span> <span class="k">this</span><span class="p">);</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">uid</span><span class="p">);</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">uid</span><span class="p">.</span><span class="nx">_uid</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nx">uid</span><span class="p">;</span>
+
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">SIGNATURE</span><span class="o">:</span>
+      <span class="k">switch</span><span class="p">(</span><span class="nx">pkt</span><span class="p">.</span><span class="nx">sig_class</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">SUBKEY_SIG</span><span class="o">:</span> 
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">SUBKEY_REV</span><span class="o">:</span> 
+        <span class="kd">var</span> <span class="nx">subkey</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">return</span> <span class="nx">subkey</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">(</span><span class="nx">pkt</span><span class="p">);</span>
+
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">UID_SIG</span><span class="o">:</span> 
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">CASUAL_SIG</span><span class="o">:</span> 
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">UID_REV</span><span class="o">:</span> 
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">KEY_SIG</span><span class="o">:</span> 
+        <span class="kd">var</span> <span class="nx">uid</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">return</span> <span class="nx">uid</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">(</span><span class="nx">pkt</span><span class="p">);</span>
+
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">KEY_REV</span><span class="o">:</span> 
+        <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">pkt</span><span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">sig</span> <span class="o">=</span> <span class="nx">Signature</span><span class="p">.</span><span class="nx">load</span><span class="p">({</span><span class="nx">pkt</span><span class="o">:</span> <span class="nx">pkt</span><span class="p">},</span> <span class="k">this</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">sig</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nx">sig</span><span class="p">;</span>
+
+        <span class="k">default</span><span class="o">:</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Invalid Key signature class: &quot;</span> <span class="o">+</span> <span class="nx">pkt</span><span class="p">.</span><span class="nx">sig_class</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">RING_TRUST</span><span class="o">:</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Ring trust packet not implemented&quot;</span><span class="p">);</span>
+
+    <span class="k">default</span><span class="o">:</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Invalid Key packet type: &quot;</span> <span class="o">+</span> <span class="nx">pkt</span><span class="p">.</span><span class="nx">pkttype</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span><span class="nx">console</span><span class="p">.</span><span class="nx">trace</span><span class="p">()</span> <span class="p">;</span> <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">);}</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="export-pubkey">export_pubkey()</h3>
+
+<p>Returns the armored public key as <code>string</code> .</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">export_pubkey</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/export&quot;</span><span class="p">).</span><span class="nx">export_pubkey</span><span class="p">;</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="export-seckey">export_seckey()</h3>
+
+<p>Returns the armored secret key as <code>string</code> .</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">export_seckey</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/export&quot;</span><span class="p">).</span><span class="nx">export_seckey</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="revokerevoc_reasonrevoc_commentcallback">revoke(revoc<em>reason, revoc</em>comment, [callback])</h3>
+
+<p>Revokes primary key</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">generateRevocation</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">revoc_reason</span><span class="p">,</span> <span class="nx">revoc_comment</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isRevoked</span><span class="p">())</span> <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;Key is already revoked&quot;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">sig_pars</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">sig_class</span><span class="o">:</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">SIGCLASS</span><span class="p">.</span><span class="nx">KEY_REV</span><span class="p">,</span> 
+                     <span class="nx">revoc_reason</span><span class="o">:</span>  <span class="nx">revoc_reason</span><span class="p">,</span> 
+                     <span class="nx">revoc_comment</span><span class="o">:</span> <span class="nx">revoc_comment</span><span class="p">,</span>
+                     <span class="nx">key</span><span class="o">:</span> <span class="k">this</span> <span class="p">};</span>
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="nx">Signature</span><span class="p">.</span><span class="nx">generate</span><span class="p">(</span><span class="nx">sig_pars</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">sig</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+      <span class="k">else</span>
+        <span class="k">try</span> <span class="p">{</span>
+          <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">pkt</span><span class="p">);</span>
+          <span class="nx">self</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">sig</span><span class="p">);</span>
+          <span class="nx">self</span><span class="p">.</span><span class="nx">updateStatus</span><span class="p">();</span>
+          <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nx">self</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+          <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="create-uidoptions-callback">create_uid(options, [callback])</h3>
+
+<p>Revokes primary key</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">generateUserId</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">name</span><span class="p">,</span> <span class="nx">expireseconds</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">uid</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">({</span>
+      <span class="nx">pkttype</span><span class="o">:</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">USER_ID</span><span class="p">,</span>
+      <span class="nx">name</span><span class="o">:</span> <span class="nx">name</span><span class="p">,</span>
+    <span class="p">});</span>
+    <span class="nx">uid</span><span class="p">.</span><span class="nx">generateSelfSig</span><span class="p">(</span><span class="nx">expireseconds</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getencryptionkey">getEncryptionKey()</h3>
+
+<p>Returns <code>Key</code> instance being the encryption key or subkey.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getEncryptionKey</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="nx">subkey</span><span class="o">=</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="nx">subkey</span><span class="p">.</span><span class="nx">isEncryptionAlgo</span><span class="p">()</span> <span class="o">&amp;&amp;</span> 
+        <span class="nx">subkey</span><span class="p">.</span><span class="nx">selfsigs</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">hasEncryptionFlag</span><span class="p">()</span> <span class="o">&amp;&amp;</span> 
+        <span class="nx">subkey</span><span class="p">.</span><span class="nx">isValid</span><span class="p">())</span> 
+      <span class="k">return</span> <span class="nx">subkey</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="nx">subkey</span><span class="o">=</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="nx">subkey</span><span class="p">.</span><span class="nx">isEncryptionAlgo</span><span class="p">()</span> <span class="o">&amp;&amp;</span> 
+        <span class="nx">subkey</span><span class="p">.</span><span class="nx">isValid</span><span class="p">())</span> 
+      <span class="k">return</span> <span class="nx">subkey</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">isEncryptionAlgo</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">isValid</span><span class="p">())</span> 
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+
+  <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;No valid key nor subkey for encryption found&quot;</span><span class="p">);</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getformatted">getFormatted()</h3>
+
+<p>Returns serializable <code>object</code> with the formatted key properties.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getFormatted</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getFormattedPacket</span><span class="p">();</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">revsigs</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">uids</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="nx">key</span><span class="p">.</span><span class="nx">subkeys</span> <span class="o">=</span> <span class="p">[];</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="nx">key</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">getFormatted</span><span class="p">());</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="nx">key</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">getFormatted</span><span class="p">());</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="nx">key</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">getFormatted</span><span class="p">());</span>
+
+  <span class="k">return</span> <span class="nx">key</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getkeykeyid">getKey(keyid)</h3>
+
+<p>Return <code>key</code> instance as key or subkey with specified keyid</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getKey</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">keyid</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">keyid</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="nx">getKeyId</span><span class="p">())</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+  <span class="k">else</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">keyid</span> <span class="o">==</span> <span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">getKeyId</span><span class="p">())</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getkeyid">getKeyId()</h3>
+
+<p>Returns primary key Id as <code>string</code>.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getKeyId</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">keyid</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">pkt</span><span class="p">.</span><span class="nx">keyid</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getsubkeys">getSubKeys()</h3>
+
+<p>Returns array of subkeys instances.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getSubkeys</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> 
+  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">;</span> 
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getpacket">getPacket()</h3>
+
+<p>Returns primary key packet serializable object.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getPacket</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_key</span><span class="p">.</span><span class="nx">pkt</span><span class="p">;</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="getuserids">getUserIds()</h3>
+
+<p>Returns User Ids instances.</p></div></div><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getUserIds</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> 
+  <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">;</span> 
+<span class="p">}</span>
+
+<span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">print</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getFormatted</span><span class="p">(),</span> <span class="kc">null</span><span class="p">,</span> <span class="s1">&#39;\t&#39;</span><span class="p">));</span>
+<span class="p">}</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><h3 id="exports-module-methods">Exports module methods</h3></div></div></div><div class="segment"><div class="code"><div class="wrapper"><span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">updateStatus</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">isValid</span><span class="p">())</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">revoked</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span><span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span>  <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">updateStatus</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">isValid</span><span class="p">())</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">revoked</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="k">this</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">status</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nx">Key</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">verify</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">calls</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">uids</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">subkeys</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">revsigs</span><span class="p">));</span>
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="nx">i</span><span class="o">&lt;</span><span class="nx">calls</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="nx">i</span><span class="o">++</span><span class="p">)</span>  <span class="p">{</span>
+      <span class="nx">calls</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">verify</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">valid</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">n</span><span class="o">++</span><span class="p">;</span> 
+        <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">self</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">n</span> <span class="o">==</span> <span class="nx">calls</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+          <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">self</span><span class="p">.</span><span class="nx">updateStatus</span><span class="p">();</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+          <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">});</span>
+    <span class="p">}</span>
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">Key</span> <span class="o">=</span> <span class="nx">Key</span><span class="p">;</span></div></div></div></div></body></html>

@@ -1,0 +1,19 @@
+<div class="dialog-header">
+  <a class="closeicon" href="#">&#x2715;</a>
+  <h1 class="dialog-title">[%= str.keyserver %]</h1>
+</div>
+<div class="innersection">
+  <form class="form">
+    <label>Keyid</label>
+    <input id="keyserver-search-input" type="text" />
+    <input type="submit" id="keyserver-search-button" value="Buscar claves"/>
+  </form>
+  <div id="keyserver-search-result-box">
+    <div id="keyserver-buttons">
+    <input id="keyserver-import-button" type="button" value="Importar claves seleccionadas" />
+    <input id="keyserver-clear-button" type="button" value="Clear" />
+    </div>
+    <div class="search-results"></div>
+  </div>
+  <div class="results"></div>
+</div>

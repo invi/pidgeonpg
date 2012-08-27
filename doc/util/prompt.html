@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="en"><head><title>util/prompt</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="util/prompt"><meta name="groc-project-path" content="lib/util/prompt.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/util/prompt.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="p">{</span><span class="nx">Cu</span><span class="p">,</span> <span class="nx">Ci</span><span class="p">,</span> <span class="nx">Cc</span><span class="p">,</span> <span class="nx">components</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;chrome&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">).</span><span class="nx">data</span><span class="p">;</span>
+<span class="kr">const</span> <span class="nx">STRINGS_URI</span>      <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="s2">&quot;domcrypt.properties&quot;</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">XPCOMUtils</span> <span class="o">=</span> <span class="nx">Cu</span><span class="p">.</span><span class="kr">import</span><span class="p">(</span><span class="s2">&quot;resource://gre/modules/XPCOMUtils.jsm&quot;</span><span class="p">).</span><span class="nx">XPCOMUtils</span><span class="p">;</span>
+
+<span class="nx">XPCOMUtils</span><span class="p">.</span><span class="nx">defineLazyServiceGetter</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s2">&quot;promptSvc&quot;</span><span class="p">,</span>
+                                   <span class="s2">&quot;@mozilla.org/embedcomp/prompt-service;1&quot;</span><span class="p">,</span>
+                                   <span class="s2">&quot;nsIPromptService&quot;</span><span class="p">);</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * This string object keeps track of all of the string names used here</span>
+<span class="cm"> */</span>
+<span class="kr">const</span> <span class="nx">MOZ_CIPHER_STRINGS</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="nx">enterPassphraseTitle</span><span class="o">:</span> <span class="s2">&quot;enterPassphraseTitle&quot;</span><span class="p">,</span>
+  <span class="nx">enterPassphraseText</span><span class="o">:</span> <span class="s2">&quot;enterPassphraseText&quot;</span><span class="p">,</span>
+  <span class="nx">confirmPassphraseTitle</span><span class="o">:</span> <span class="s2">&quot;confirmPassphraseTitle&quot;</span><span class="p">,</span>
+  <span class="nx">confirmPassphraseText</span><span class="o">:</span> <span class="s2">&quot;confirmPassphraseText&quot;</span><span class="p">,</span>
+  <span class="nx">passphrasesDoNotMatchTitle</span><span class="o">:</span> <span class="s2">&quot;passphrasesDoNotMatchTitle&quot;</span><span class="p">,</span>
+  <span class="nx">passphrasesDoNotMatchText</span><span class="o">:</span> <span class="s2">&quot;passphrasesDoNotMatchText&quot;</span><span class="p">,</span>
+  <span class="nx">signErrorTitle</span><span class="o">:</span> <span class="s2">&quot;signErrorTitle&quot;</span><span class="p">,</span>
+  <span class="nx">signErrorMessage</span><span class="o">:</span> <span class="s2">&quot;signErrorMessage&quot;</span><span class="p">,</span>
+  <span class="nx">noPassphraseEntered</span><span class="o">:</span> <span class="s2">&quot;noPassphraseEntered&quot;</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * Memoize and return all strings used by this JSM</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">_stringStorage</span><span class="p">(</span><span class="nx">aName</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+
+<span class="nx">_stringStorage</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="p">{</span>
+
+  <span class="cm">/**</span>
+<span class="cm">   * Internally memoizes and gets the string via aName</span>
+<span class="cm">   *</span>
+<span class="cm">   * @param string aName</span>
+<span class="cm">   * @returns string</span>
+<span class="cm">   */</span>
+  <span class="nx">getStr</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">SS_getStr</span><span class="p">(</span><span class="nx">aName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">MOZ_CIPHER_STRINGS</span><span class="p">[</span><span class="nx">aName</span><span class="p">])</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">[</span><span class="nx">aName</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">[</span><span class="nx">aName</span><span class="p">];</span>
+      <span class="p">}</span>
+      <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">[</span><span class="nx">aName</span><span class="p">]</span> <span class="o">=</span> <span class="nx">stringBundle</span><span class="p">.</span><span class="nx">GetStringFromName</span><span class="p">(</span><span class="nx">aName</span><span class="p">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">[</span><span class="nx">aName</span><span class="p">];</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+      <span class="nx">Cu</span><span class="p">.</span><span class="nx">reportError</span><span class="p">(</span><span class="s2">&quot;Cannot get &quot;</span> <span class="o">+</span> <span class="nx">aName</span> <span class="o">+</span> <span class="s2">&quot; from stringBundle&quot;</span><span class="p">);</span>
+      <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+<span class="p">};</span></div></div></div><div class="segment"><div class="comments"><div class="wrapper"><p>Initialize the stringStorage object</p></div></div><div class="code"><div class="wrapper"><span class="kd">var</span> <span class="nx">stringStorage</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">_stringStorage</span><span class="p">();</span>
+
+<span class="cm">/**</span>
+<span class="cm"> * StringBundle shortcut function</span>
+<span class="cm"> *</span>
+<span class="cm"> * @param string aName</span>
+<span class="cm"> * @returns string</span>
+<span class="cm"> */</span>
+<span class="kd">function</span> <span class="nx">getStr</span><span class="p">(</span><span class="nx">aName</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="nx">aName</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">promptSvc</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+  <span class="kd">let</span> <span class="nx">passphrase</span> <span class="o">=</span> <span class="p">{};</span>
+  <span class="kd">let</span> <span class="nx">prompt</span> <span class="o">=</span>
+    <span class="nx">promptSvc</span><span class="p">.</span><span class="nx">promptPassword</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span>
+                             <span class="nx">getStr</span><span class="p">(</span><span class="s2">&quot;enterPassphraseTitle&quot;</span><span class="p">),</span>
+                             <span class="nx">getStr</span><span class="p">(</span><span class="s2">&quot;enterPassphraseText&quot;</span><span class="p">),</span>
+                             <span class="nx">passphrase</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="p">{</span> <span class="nx">value</span><span class="o">:</span> <span class="kc">false</span> <span class="p">});</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">prompt</span> <span class="o">&amp;&amp;</span> <span class="nx">passphrase</span><span class="p">.</span><span class="nx">value</span><span class="p">)</span> 
+    <span class="k">return</span> <span class="nx">passphrase</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+  <span class="k">else</span>
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+<span class="p">}</span>
+
+<span class="kd">var</span> <span class="nx">STD_OK_CANCEL_BUTTONS</span> <span class="o">=</span> <span class="mi">513</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">promptOkCancel</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">title</span><span class="p">,</span> <span class="nx">text</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span>  <span class="nx">promptSvc</span><span class="p">.</span><span class="nx">confirmEx</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span>
+                             <span class="nx">title</span><span class="p">,</span>
+                             <span class="nx">text</span><span class="p">,</span>
+                             <span class="nx">STD_OK_CANCEL_BUTTONS</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span><span class="kc">null</span><span class="p">,</span><span class="kc">null</span><span class="p">,{</span> <span class="nx">value</span><span class="o">:</span><span class="kc">false</span><span class="p">})</span>
+<span class="p">}</span></div></div></div></div></body></html>

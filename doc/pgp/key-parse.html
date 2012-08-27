@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><title>pgp/key-parse</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../"><meta name="groc-document-path" content="pgp/key-parse"><meta name="groc-project-path" content="lib/pgp/key-parse.js"><link rel="stylesheet" type="text/css" media="all" href="../assets/style.css"><script type="text/javascript" src="../assets/behavior.js"></script><body><div id="meta"><div class="file-path">lib/pgp/key-parse.js</div></div><div id="document"><div class="segment"><div class="code"><div class="wrapper"><span class="kr">const</span> <span class="nx">PGP</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/openpgpdefs&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">misc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/misc&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">armor</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;encode/armor&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">Key</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;pgp/key&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">IOBuf</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util/iobuf&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">Parser</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;pgp/parser&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="p">{</span><span class="nx">data</span><span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">file</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;url&quot;</span><span class="p">);</span>
+<span class="kr">const</span> <span class="nx">logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;util/logger&quot;</span><span class="p">).</span><span class="nx">create</span><span class="p">(</span><span class="s2">&quot;key-parse&quot;</span><span class="p">);</span>
+
+<span class="kd">function</span> <span class="nx">parsekeys</span><span class="p">(</span><span class="nx">block</span><span class="p">,</span> <span class="nx">isBin</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">bin_block</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">isBin</span><span class="p">)</span>  
+    <span class="nx">bin_block</span> <span class="o">=</span> <span class="nx">block</span><span class="p">;</span> 
+  <span class="k">else</span>
+    <span class="nx">bin_block</span> <span class="o">=</span> <span class="nx">armor</span><span class="p">.</span><span class="nx">decode</span><span class="p">(</span><span class="nx">block</span><span class="p">,</span> <span class="p">[</span><span class="nx">PGP</span><span class="p">.</span><span class="nx">ARMOR</span><span class="p">.</span><span class="nx">PUBLICKEY</span><span class="p">,</span><span class="nx">PGP</span><span class="p">.</span><span class="nx">ARMOR</span><span class="p">.</span><span class="nx">PRIVATEKEY</span><span class="p">]);</span>
+
+  <span class="kd">var</span> <span class="nx">inp</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IOBuf</span><span class="p">(</span><span class="nx">bin_block</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">keylist</span> <span class="o">=</span> <span class="p">[];</span>
+  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">rc</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">pkt</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+  <span class="k">while</span><span class="p">((</span><span class="nx">rc</span><span class="o">=</span><span class="nx">Parser</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">inp</span><span class="p">,</span> <span class="nx">pkt</span><span class="o">=</span><span class="p">{}))</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span><span class="p">)</span> <span class="k">return</span> <span class="nx">rc</span><span class="p">;</span>
+    <span class="k">else</span> <span class="p">{</span>
+      <span class="k">switch</span><span class="p">(</span><span class="nx">pkt</span><span class="p">.</span><span class="nx">pkttype</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">PUBLIC_KEY</span><span class="o">:</span>
+        <span class="k">case</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">PKT</span><span class="p">.</span><span class="nx">SECRET_KEY</span><span class="o">:</span>
+          <span class="nx">key</span> <span class="o">=</span> <span class="nx">Key</span><span class="p">.</span><span class="nx">loadFromPacket</span><span class="p">(</span><span class="nx">pkt</span><span class="p">,</span> <span class="nx">logger</span><span class="p">);</span>
+          <span class="nx">keylist</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+          <span class="k">break</span><span class="p">;</span>
+        <span class="k">default</span><span class="o">:</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">key</span><span class="p">)</span> <span class="nx">key</span><span class="p">.</span><span class="nx">addPacket</span><span class="p">(</span><span class="nx">pkt</span><span class="p">);</span>
+          <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">keylist</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">parsekeysfile</span><span class="p">(</span><span class="nx">fname</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">block</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">fname</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">bin_block</span> <span class="o">=</span> <span class="nx">armor</span><span class="p">.</span><span class="nx">decode</span><span class="p">(</span><span class="nx">block</span><span class="p">,</span> <span class="p">[</span><span class="nx">PGP</span><span class="p">.</span><span class="nx">ARMOR</span><span class="p">.</span><span class="nx">PUBLICKEY</span><span class="p">,</span> <span class="nx">PGP</span><span class="p">.</span><span class="nx">ARMOR</span><span class="p">.</span><span class="nx">PRIVATEKEY</span><span class="p">]);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">bin_block</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">fn</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">toFilename</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="nx">fname</span><span class="p">));</span>
+    <span class="nx">bin_block</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">read</span><span class="p">(</span><span class="nx">fn</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">parsekeys</span><span class="p">(</span><span class="nx">bin_block</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">parsekeys</span> <span class="o">=</span> <span class="nx">parsekeys</span><span class="p">;</span>
+<span class="nx">exports</span><span class="p">.</span><span class="nx">parsekeysfile</span> <span class="o">=</span> <span class="nx">parsekeysfile</span><span class="p">;</span></div></div></div></div></body></html>

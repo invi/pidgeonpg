@@ -1,0 +1,63 @@
+<div class="dialog-header">
+  <a class="closeicon" href="#">&#x2715;</a>
+  <h1 class="dialog_title">[%= str.genkey %]</h1>
+</div>
+<div class="innersection">
+  <form class="form">
+  <table>
+  <tbody>
+    <tr>
+      <td >[%= str.name %]</td>
+      <td><input id="name" /></td>
+    </tr>
+    <tr>
+      <td >[%= str.email %]</td>
+      <td><input id="email" /></td>
+    </tr>
+    <tr>
+      <td >[%= str.comment %]</td>
+      <td><input id="comment" /></td>
+    </tr>
+    <tr>
+      <td>[%= str.key_type %]</td>
+      <td>
+        <select id="pgp-genkey-key-type">
+          <option value="RSA">RSA</option>
+          <option value="DSA">DSA + Elgamal</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>[%= str.key_length %]</td>
+      <td>
+        <select id="pgp-genkey-key-length">
+          <option value="1024">1024</option>
+          <option value="2048" selected="selected">2048</option>
+          <option value="4096">4096</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td >[%= str.expires %]</td>
+      <td>
+        <input id="expiredate" type="number" />
+        <select id="pgp-genkey-expiredateformat">
+          <option value="never" >[%= str.never %]</option>
+          <option value="days" >[%= str.days %]</option>
+          <option value="weeks" >[%= str.weeks %]</option>
+          <option value="months" >[%= str.months %]</option>
+          <option value="years" >[%= str.years %]</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td />
+      <td>
+        <input id="pgp-genkey-button"  type="submit" value="[%=str.pgp_genkey_button %]"/>
+      </td>
+    </tr>
+  </tbody>
+  </table>
+  </form>
+  <div class="results">
+</div>

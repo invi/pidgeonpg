@@ -1,0 +1,68 @@
+<div id="subkey-[%= id %]" class="key subkey">
+  <div class="tabs subkey_menu">
+    <a class="tab expandable selected" name="subkey-details" href="#revoke" onclick="return false">Subkey details</a>
+    [% if (editable) { %]
+      [% if (secret && !revoked) { %]
+    <a class="tab expandable" name="subkey-revoke" href="#revoke" onclick="return false">[%= str.revoke %]</a>
+      [% } %]
+    <a class="tab" name="subkey-delete" href="#delete" onclick="return false">[%= str.delete %]</a>
+    [% } %]
+    <div class="tabcontent" name="subkey-details-content">
+      <!--  Revocation Signature -->
+      [% if (revoked && revsigs.length) { %]
+      <div class="view_details revocation_details">
+        <span class="revoked revoked_subkey">
+          [%= revsigs[0].sig_class %] [%= str.created %] [%= revsigs[0].creation_date %]
+        </span><br />
+        <span>[%= str.reason %]: [%= revsigs[0].revoc_reason %]</span><br />
+        <span>[%= str.comment %]: [%= revsigs[0].revoc_comment %]</span><br />
+      </div>
+      [% } %]
+      <div class="view_details subkey_details">
+        <span class="length">[%= length %]-bit [%= algo %] 
+        [% if (secret) {%]
+          [%= str.secretsubkey %]
+        [% }else{ %]
+          [%= str.publicsubkey %]
+        [%}%]
+        </span><span  class="created">[%= str.created %]: <span class="date"> [%= creation_date %]</span></span><br />
+        [%= str.fingerprint %]: <span  class="fingerprint">[%= fingerprint %]</span><br />
+        <!--  Self Signature -->
+        <span>[%= selfsigs[0].sig_class %] [%= str.created %]: <span class="date"> [%= creation_date %]</span></span><br />
+        [% if (selfsigs[0].keyflags.length > 0) { %]
+          [% for (var j=0; j < selfsigs[0].keyflags.length; j++) { %]
+            <span>[%= selfsigs[0].keyflags[j] %]</span><br />
+          [% } %]
+        [% } %]
+        [%= str.expiration %]: <span class="date">[%= selfsigs[0].expiration_date %]</span><br />
+      </div>
+    </div>
+    <div class="tabcontent" name="subkey-revoke-content">
+      <table>
+      <tr>
+      <td>[%= str.reason %]</td>
+      <td>
+      <select class="revocation-reason">
+         <option selected="selected" value="0">[%= str.rev0x00 %]</option>
+         <option value="1">[%= str.rev0x01 %]</option>
+         <option value="2">[%= str.rev0x02 %]</option>
+         <option value="3">[%= str.rev0x03 %]</option>
+      </select>
+      </td>
+      </tr>
+      <tr>
+        <td>[%= str.comment %]</td>
+        <td>
+        <input type="text" class="revocation-comment" />
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+        <button name="sub_revoke_button">Revoke User Id</button>
+        </td>
+      </tr>
+      </table>
+    </div>
+  </div>
+</div>

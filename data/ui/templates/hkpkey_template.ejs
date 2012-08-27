@@ -1,0 +1,15 @@
+
+<div class="hkpkey">
+  <div class="hkpinput">
+  <input type="checkbox" id="import-[%= keyid %]" name="keyserver-select" />
+  </div>
+  <span>[%= creation_date %]</span><span>  [%= title %]</span>
+  <div id="[%= keyid %]" class="hkpkey_uids">
+  [% for (var i=1;i<uids.length; i++) { %]
+  <span>[%= uids[i].creation_date %]</span>
+  <span class="hkpkey_uid">[%= uids[i].uid %]</span>
+  <br />
+  [% } %]
+  </div>
+</div>
+
