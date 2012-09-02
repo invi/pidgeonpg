@@ -1,10 +1,10 @@
 ## Pidgeon Privacy Guard
 
-Consists in JavaScript implementation of the OpenPGP protocol [RFC4880]. 
+JavaScript implementation of the OpenPGP protocol [RFC4880](http://tools.ietf.org/html/rfc4880) for Mozilla Firefox. 
 
 ### Requirements
 
-Mozilla Firefox >= 9.0 and the  Network Security Services (NSS) library.
+* Mozilla Firefox 14.0 or newer.
 
 ### Features
 
@@ -25,40 +25,31 @@ Mozilla Firefox >= 9.0 and the  Network Security Services (NSS) library.
 * Cast5
 * AES-256
 
-#### Compression algorightms (so far, only used for decompression)
+#### Compression algorightms (used for decompression)
 
 * Zip
 * Zlib
 * Bzip2
 
-#### Limitations
+### Build instructions
 
-Certificate revocation signatures.
-
-### Building instructions
-
-By now there is only instructions to run from the addon-sdk. Building
-the xpi package from the addon-sdk is broken.
-
-1. Clone the Addon-SDK environment for Mozilla Firefox:
+1. Clone the Addon-SDK for Mozilla Firefox repository:
  
-  `$ git clone https://github.com/mozilla/addon-sdk.git`
+  `git clone https://github.com/mozilla/addon-sdk.git`
 
+2. Clone the PidgeonPG repository:
 
-2. Load the Addon-SDK environment from it's path:
+  `git clone git://github.com/invi/pidgeonpg.git`
 
-  `addon-sdk$ source bin/activate`
+3. Load the Addon-SDK environment from it's path:
 
-
-3. Clone the latest PidgeonPG code:
-
-  `$git clone git://github.com/invi/pidgeonpg.git`
-
+  `cd addon-sdk`
+  `source bin/activate`
+  `cd ..`
 
 4. Enter the PidgeonPG path and run:
 
-  `pidgeonpg$ cfx xpi`
+  `cd pidgeonpg`
+  `cfx xpi`
 
-This steps will create the file `pidgeonpg.xpi` inside the PidgeonPG path, ready to install.
-
-### Documentation
+This steps will create the file `pidgeonpg.xpi` inside the `pidgeonpg` path, ready to install with Mozilla Firefox.
