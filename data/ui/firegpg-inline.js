@@ -200,7 +200,7 @@ FireGPG.Inline.HandleBlock = function(document, range, blockType, dataurl) {
 		  		block.header.textContent = FireGPG.Inline.i18n.getString("signed-message")  + ", " + FireGPG.Inline.i18n.getString("unverified");
 		  		block.action.textContent = FireGPG.Inline.i18n.getString("verify");
 		  		// Extract the message without the header and signature
-		  		block.message.innerHTML = content.substring(content.indexOf("\n\n") + 2, content.indexOf(FireGPG.Inline.Tags.SignatureStart)).replace(/</gi,"&lt;").replace(/>/gi,"&gt;").replace(/\n/gi,"<br />");
+		  		block.message.innerHTML = escapeHTML(content.substring(content.indexOf("\n\n") + 2, content.indexOf(FireGPG.Inline.Tags.SignatureStart)).replace(/</gi,"&lt;").replace(/>/gi,"&gt;").replace(/\n/gi,"<br />"));
 		  		break;
 		  	case FireGPG.Inline.MESSAGE_BLOCK:
 		  		block.body.className = "caution";

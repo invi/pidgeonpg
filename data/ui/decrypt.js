@@ -62,7 +62,7 @@ var decrypt = {
         if (res.rc >= 0) 
           createSaveButtons(box.content_ele, res.msg, "<pre>" + res.msg + "</pre>");
         else
-          box.content_ele.innerHTML = res.msg;
+          box.content_ele.textContent = res.msg;
         box.stopProgress();
         box.updateTitle(title);
         self.mode_finished();

@@ -55,7 +55,7 @@ var sign = {
         createSaveButtons(box.content_ele, res.msg, details);
         title = getStr("signed", Keyring.format_keylink(res.sig));
       } else {
-        box.content_ele.innerHTML = res.msg;
+        box.content_ele.textContent = res.msg;
         title = getStr("error_signing");
       }
       box.stopProgress();

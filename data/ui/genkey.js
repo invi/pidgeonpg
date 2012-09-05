@@ -49,7 +49,7 @@ var genkey = {
           var key_length = options[key_type].lengths[i];
           var opt = document.createElement("option");
           opt.value = key_length;
-          opt.innerHTML = key_length;
+          opt.textContent = key_length;
           if (key_length == options[key_type].default_length)
               opt.selected="selected";
           ele_genkey_key_length.appendChild(opt);

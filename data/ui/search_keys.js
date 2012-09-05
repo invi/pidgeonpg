@@ -33,7 +33,7 @@ var search_keys = {
       try {
         if (res.ts != self.search_ts) return;
         if (res.rc == -1) {
-          self.search_results_ele.innerHTML = getStr("search_error", res.msg);
+          self.search_results_ele.textContent = getStr("search_error", res.msg);
           return;
         }
         var keys = res.keys;

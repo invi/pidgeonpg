@@ -56,15 +56,15 @@ function timeformat(ts) {
 }
 
 function createSaveButtons(ele, resmsg, details) {
-  ele.innerHTML = "<div name='copymenu'><div name=\"msg\"></div>" +
+  ele.innerHTML = escapeHTML("<div name='copymenu'><div name=\"msg\"></div>" +
     "<button name=\"toclipboard\">" + getStr("clipboard") + "</button>" +
     "<button name=\"tofile\">" + getStr("file") + "</button></div>" +
-    "<div name='box-result'>" + details + "</div>";
+    "<div name='box-result'>" + details + "</div>");
   var msg = ele.querySelector("div[name='msg']");
   var tm = null;
   msg.notify = function(msg2) {
     if (tm) clearTimeout(tm);
-    msg.innerHTML = msg2;
+    msg.textContent = msg2;
     tm=setTimeout(function() { msg.innerHTML = ''}, 4000);
   }
   var tofile = ele.querySelector("button[name='tofile']");
@@ -99,22 +99,8 @@ function countProperties(obj) {
   return propCount;
 }
 
-function escapeHTML(s) {
-  var MAP = {
-    'α': '&aacute;',
-    'ι': '&eacute;',
-    'ν': '&iacute;',
-    'σ': '&oacute;',
-    'ϊ': '&uacute;',
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&#34;',
-    "'": '&#39;'
-  };
-  var repl = function(c) { return MAP[c]; };
-  return s.replace(/[αινσϊ&<>'"]/g, repl);
-}
+function escapeHTML(str) str.replace(/[&"<>]/g, function (m) escapeHTML.replacements[m]);
+escapeHTML.replacements = { "&": "&amp;", '"': "&quot", "<": "&lt;", ">": "&gt;" };
 
 var notify = {
   error: function(msg) {
@@ -175,7 +161,7 @@ var notify = {
 }
 
 function progress_bar(ele, text) {
-  ele.innerHTML = '<center><img src="../graphics/animated_progress.gif" /><h1>' + escapeHTML(text) + '</h1></center>';
+  ele.innerHTML = escapeHTML('<center><img src="../graphics/animated_progress.gif" /><h1>' + escapeHTML(text) + '</h1></center>');
 }
 
 function collect() {

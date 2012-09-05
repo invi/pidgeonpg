@@ -22,7 +22,7 @@ function Tabs(ele) {
           log_error(err);
         }
       }
-    })(this.menus[i], this.menus[i].innerHTML);
+    })(this.menus[i], this.menus[i].textContent);
     var sele = self.ele.querySelector('[name="'+this.menus[i].name+'-content"]');
     if (sele) {
       var li = document.createElement("div");
@@ -52,7 +52,7 @@ Tabs.prototype.updateTitles = function() {
         sele.style.display="";
         innerhtml += "+";
       }
-      mm.innerHTML = innerhtml + "</span>" + mm.nname;
+      mm.innerHTML = escapeHTML(innerhtml + "</span>" + mm.nname);
     }
   }
 }
@@ -64,7 +64,7 @@ Tabs.prototype.get = function(tabname) {
   ret.message = function(str) {
     var tab = self.ele.parentNode.querySelector('[name="'+tabname+'-content"]'); 
     var log = tab.querySelector('[name="log"]');
-    log.innerHTML = str;
+    log.textContent = str;
     setTimeout(function() { log.innerHTML = "" }, 3000);
   }
   return ret;

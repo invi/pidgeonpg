@@ -96,10 +96,11 @@ Keyview.prototype.show_createsub = function() {
     }
   }
   key_type.onchange = function(evt) {
-    key_length.innerHTML = "<option value='1024'>1024</option>";
+    var innerhtml = "<option value='1024'>1024</option>";
     if (evt.target.value == "RSA") 
-      key_length.innerHTML += "<option value='2048' selected='selected'>2048</option>" +
-                              "<option value='4096'>4096</option>";
+      innerhtml += "<option value='2048' selected='selected'>2048</option>" +
+                   "<option value='4096'>4096</option>";
+    key_length.innerHTML = escapeHTML(innerhtml);
   }
   expire_format.onchange = function(evt) { 
     expiredate.disabled = (evt.target.value == "never");
@@ -193,7 +194,7 @@ Keyview.prototype.show_export_sec = function() {
   var pubexport = this.box.ele.querySelector("a[name='key-secexport']");
   pubexport.addEventListener("click", function(evt) {
     ONCE("pgp-secexported", function(res) {
-      tab.ele.querySelector("pre").innerHTML = res.armored_key;
+      tab.ele.querySelector("pre").textContent = res.armored_key;
     });
     EMIT("pgp-secexport", {keyid: self.key.id});
   });
@@ -219,7 +220,7 @@ Keyview.prototype.show_export_pub = function() {
   var pubexport = this.box.ele.querySelector("a[name='key-pubexport']");
   pubexport.addEventListener("click", function(evt) {
     ONCE("pgp-pubexported", function(res) {
-      self.box.ele.querySelector("pre").innerHTML = res.armored_key;
+      self.box.ele.querySelector("pre").textConent = res.armored_key;
     });
     EMIT("pgp-pubexport", {keyids: [self.key.id]});
   });

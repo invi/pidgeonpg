@@ -95,7 +95,7 @@ var encrypt = {
       } else {
         title = res.sign_keyid ? getStr("error_encryptingandsigningto", enc_link, sign_link)
                                : getStr("error_encryptingto", enc_link);
-        box.content_ele.innerHTML = res.msg;
+        box.content_ele.textContent = res.msg;
       }
       box.stopProgress();
       box.updateTitle(title);

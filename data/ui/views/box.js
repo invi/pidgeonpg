@@ -100,12 +100,12 @@ Box.prototype.updateBox = function () {
 Box.prototype.updateIcon = function () {
   if (this.progressbox) {
     addClass(this.header_ele, "progress");
-    this.icon_ele.innerHTML = "<img src='" + this.onprogress_img + "' />"
+    this.icon_ele.innerHTML = escapeHTML("<img src='" + this.onprogress_img + "' />");
   } 
   else if (this.expandable) {
-      this.icon_ele.innerHTML = this.expanded ? this.expand_icon : this.collapse_icon;
+      this.icon_ele.innerHTML = escapeHTML(this.expanded ? this.expand_icon : this.collapse_icon);
   } else {
-      this.icon_ele.innerHTML = this.close_icon;
+      this.icon_ele.innerHTML = escapeHTML(this.close_icon);
   }
 };
 
@@ -164,7 +164,7 @@ Box.prototype.serialize = function () {
 
 Box.prototype.updateTitle = function(title) {
   this.title = title;
-  this.title_ele.innerHTML = title;
+  this.title_ele.innerHTML = escapeHTML(title);
 }
 
 Box.prototype.stopProgress = function() {

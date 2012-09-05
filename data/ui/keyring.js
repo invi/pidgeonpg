@@ -135,7 +135,7 @@ var Keyring = {
     if (key) {
       var link = document.createElement("a")
       link.className = "keylink";
-      link.innerHTML =  key.short_id + " " + key.uids[0].name;
+      link.textContent =  key.short_id + " " + key.uids[0].name;
       link.href = "#";
       link.name = id;
       link.setAttribute("onclick", "return false;");

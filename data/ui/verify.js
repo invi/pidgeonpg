@@ -47,7 +47,7 @@ var verify = {
       else 
         title = getStr("error_verifying");
       var box = boxes.get(res.ts);
-      box.content_ele.innerHTML = "<div name='box-result'><pre>" + box.msg + "</pre></div>";
+      box.content_ele.innerHTML = escapeHTML("<div name='box-result'><pre>" + box.msg + "</pre></div>");
       box.stopProgress();
       box.updateTitle(title);
       self.mode_finished();

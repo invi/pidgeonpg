@@ -14,7 +14,7 @@ var export_selected = {
     var self = this;
     this.keyids = keyids;
     ONCE("pgp-pubexported", function(res) {
-      self.Q("pre").innerHTML = res.armored_key;
+      self.Q("pre").textContent = res.armored_key;
     });
     EMIT("pgp-pubexport", {keyids: keyids});
   },

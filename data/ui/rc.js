@@ -23,7 +23,7 @@ var RoundCube = {
       "var res = document.getElementById('PidgeonPG');" +
       "var handler = null;" + 
       "function check_end() {" + 
-      "  if (res.innerHTML=='true') {" +
+      "  if (res.textContent=='true') {" +
       "    clearInterval(handler);" +
           submit_ele.getAttribute("onclick") + 
       "  }" +
@@ -38,7 +38,7 @@ var RoundCube = {
           framed_cbody.style.display = "none";
           self.cbody.style.display = "";
           self.cbody.value = res.msg;
-          document.getElementById('PidgeonPG').innerHTML = 'true';
+          document.getElementById('PidgeonPG').textContent = 'true';
         });
         var fcbody = framed_cbody.contentWindow.document.getElementById("body-toencrypt");
         var req = {
@@ -53,7 +53,7 @@ var RoundCube = {
     });
     var res = document.createElement("div");
     res.id = "PidgeonPG";
-    res.innerHTML = "false";
+    res.textContent = "false";
     res.style.display = "none";
     document.body.appendChild(res);
   },
