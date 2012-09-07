@@ -4,15 +4,22 @@
 // 
 // Tests for ppgapp application interface 
 
+
 const PGP = require("pgp/openpgpdefs");
 const {ppgapp} = require('ppgapp');
 const {storage} = require('ring/storage');
 const {parsekeysfile} = require("pgp/key-parse");
 const logger = require("util/logger").create("test-ppgapp.js");
+const timers = require("timers");
+
+var {prompt} = require("util/prompt");
+prompt.newPassphrase = function() { return { passphrase: "1234" } };
+prompt.enterPassphrase = function() { return "1234" };
 
 var test_key = "test/key1.asc";
 var test_key2 = "test/key2.asc";
 var msg_txt = "Hello world";
+
 
 exports.testImportFile = function(test) {
   storage.cleantest();
@@ -59,25 +66,27 @@ exports.testCreateSubkey = function(test) {
   storage.cleantest();
 	test.waitUntilDone();
   ppgapp.importFile(test_key, function(imported_keys) {
-    var key = imported_keys[0];
-    var expiredate = Math.floor(new Date("10/10/2030").getTime() / 1000);
-    var options = { 
-      keypairBits: 1024,
-      keyType: PGP.PUBKEY.ALGO.RSA,
-      subkeyType: PGP.PUBKEY.ALGO.RSA,
-      expireseconds: 0,
-    }
-    ppgapp.generateSubkey(key.id, options, function(err, key, subkey) {
-      if (err) logger.error(err);
-      test.assertEqual(subkey.algo, "RSA", "New uid name mismatch");
-	    test.done();
-    });
+    try {
+      var key = imported_keys[0];
+      var expiredate = Math.floor(new Date("10/10/2030").getTime() / 1000);
+      var options = { 
+        keypairBits: 1024,
+        keyType: PGP.PUBKEY.ALGO.RSA,
+        subkeyType: PGP.PUBKEY.ALGO.RSA,
+        expireseconds: 0,
+      }
+      ppgapp.generateSubkey(key.id, options, function(err, key, subkey) {
+        if (err) logger.error(err);
+        test.assertEqual(subkey.algo, "RSA", "New uid name mismatch");
+	      test.done();
+      });
+    } catch(err) { logger.error(err) }
   });
 }
 
 exports.testGenerate = function(test) {
   storage.cleantest();
-  test.waitUntilDone();
+  test.waitUntilDone(60000);
   var options = { 
     expiredate : Math.floor(new Date("10/10/2030").getTime() / 1000),
     name       : "test name",
@@ -88,12 +97,14 @@ exports.testGenerate = function(test) {
     keyType     : PGP.PUBKEY.ALGO.RSA,
     subkeyType  : PGP.PUBKEY.ALGO.RSA,
   }
+  try {
   ppgapp.generateKeypair(options, function(err, key) {
     if (err) logger.error(err);
     test.assertEqual(key.ringstatus, PGP.KEYSTATUS.NEW, 
                      "Error importing new  key string");
     test.done();
   });
+  } catch(err) {console.log(err)}
 }
 
 exports.testRevokeKey = function(test) {

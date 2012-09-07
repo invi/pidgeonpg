@@ -6,6 +6,9 @@ const {storage} = require('ring/storage');
 const timers = require("timers");
 const logger = require('util/logger').create();
 
+var {prompt} = require("util/prompt");
+prompt.newPassphrase = function() { return { passphrase: "1234" } };
+
 var test_data = {key1:"test/key1.asc", 
                  msg_txt:"Hello World!!",
                  key_elgamal:"test/key_dsaegamal_unprotected.asc"};
