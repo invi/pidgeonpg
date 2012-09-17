@@ -1,0 +1,6 @@
+[submodule "ppg-api"]
+	path = ppg-api
+	url = https://github.com/invi/ppg-api.git
+[submodule "packages"]
+	path = packages
+	url = https://github.com/invi/ppg-api.git

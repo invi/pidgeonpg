@@ -9,5 +9,7 @@
     "icon64": "data/graphics/logo64.png",
     "fullName": "PigeonPG for Firefox", 
     "id": "jid1-ZA5BPVkIBMFBJg", 
-    "description": "OpenPGP protocol implementation for Mozilla Firefox"
+    "description": "OpenPGP protocol implementation for Mozilla Firefox",
+    "dependencies": ["addon-kit","api-utils","ppg-api"],
+    "packages": "./packages/ppg-api"
 }
