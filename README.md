@@ -35,21 +35,23 @@ JavaScript implementation of the OpenPGP protocol [RFC4880](http://tools.ietf.or
 
 1. Clone the Addon-SDK for Mozilla Firefox repository:
  
-  `git clone https://github.com/mozilla/addon-sdk.git`
+>  git clone https://github.com/mozilla/addon-sdk.git
 
 2. Clone the PidgeonPG repository:
 
-  `git clone git://github.com/invi/pidgeonpg.git`
+> git clone git://github.com/invi/pidgeonpg.git
+> git submodule init
+> git submodule update
 
 3. Load the Addon-SDK environment from it's path:
 
-  `cd addon-sdk`
-  `source bin/activate`
-  `cd ..`
+> cd addon-sdk
+> source bin/activate
+> cd ..
 
 4. Enter the PidgeonPG path and run:
 
-  `cd pidgeonpg`
-  `cfx xpi`
+> cd pidgeonpg
+> cfx xpi
 
 This steps will create the file `pidgeonpg.xpi` inside the `pidgeonpg` path, ready to install with Mozilla Firefox.
